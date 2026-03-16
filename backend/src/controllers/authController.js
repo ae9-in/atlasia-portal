@@ -4,6 +4,7 @@ const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { signToken, buildCookieOptions } = require("../services/tokenService");
 const { normalizeRole } = require("../utils/roles");
+const { logActivity } = require("../services/logService");
 
 const sendAuthResponse = (res, user, statusCode) => {
   const normalizedRole = normalizeRole(user.role);
@@ -43,6 +44,16 @@ const register = asyncHandler(async (req, res) => {
   }
 
   const user = await User.create({ name, email: normalizedEmail, password, role: "STUDENT", businessId, college });
+  
+  if (["ADMIN", "SUPERADMIN"].includes(normalizeRole(user.role))) {
+    await logActivity({
+      userId: user._id,
+      action: "REGISTER",
+      details: `${user.name} registered as ${user.role}`,
+      ip: req.ip
+    });
+  }
+
   sendAuthResponse(res, user, StatusCodes.CREATED);
 });
 
@@ -58,6 +69,15 @@ const login = asyncHandler(async (req, res) => {
 
   if (!user || !(await user.comparePassword(password)) || !user.isActive) {
     throw new AppError("Invalid email or password", StatusCodes.UNAUTHORIZED);
+  }
+
+  if (["ADMIN", "SUPERADMIN"].includes(normalizeRole(user.role))) {
+    await logActivity({
+      userId: user._id,
+      action: "LOGIN",
+      details: `${user.name} logged in`,
+      ip: req.ip
+    });
   }
 
   sendAuthResponse(res, user, StatusCodes.OK);

@@ -11,20 +11,23 @@ const navigationByRole = {
     { label: "My Tasks", to: "/workspace/tasks" },
     { label: "Profile", to: "/workspace/profile" }
   ],
-  COORDINATOR: [
+  ADMIN: [
     { label: "Dashboard", to: "/workspace" },
     { label: "Tasks", to: "/workspace/tasks" },
+    { label: "Submissions", to: "/workspace/submissions" },
     { label: "Businesses", to: "/workspace/businesses" },
     { label: "Sprints", to: "/workspace/sprints" },
     { label: "Students", to: "/workspace/users" },
     { label: "Profile", to: "/workspace/profile" }
   ],
-  SUPER_ADMIN: [
+  SUPERADMIN: [
     { label: "Dashboard", to: "/workspace" },
     { label: "Users", to: "/workspace/users" },
     { label: "Businesses", to: "/workspace/businesses" },
     { label: "Sprints", to: "/workspace/sprints" },
     { label: "Tasks", to: "/workspace/tasks" },
+    { label: "Submissions", to: "/workspace/submissions" },
+    { label: "Logs", to: "/workspace/logs" },
     { label: "Settings", to: "/workspace/settings" },
     { label: "Profile", to: "/workspace/profile" }
   ]
@@ -54,7 +57,9 @@ const DashboardLayout = () => {
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Atlasia Workbook</p>
-              <p className="text-2xl font-bold text-white">{role?.replace("_", " ") || "Workspace"}</p>
+              <p className="text-2xl font-bold text-white">
+                {role === "SUPERADMIN" ? "Superadmin" : role === "ADMIN" ? "Admin" : "Student"}
+              </p>
             </div>
           </Link>
           <div className="flex flex-wrap items-center gap-3">

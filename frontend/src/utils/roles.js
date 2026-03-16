@@ -5,12 +5,12 @@ export const normalizeRole = (role) => {
 
   const value = String(role).trim().toUpperCase();
 
-  if (value === "ADMIN" || value === "SUPERADMIN" || value === "SUPER_ADMIN") {
-    return "SUPER_ADMIN";
+  if (value === "SUPERADMIN" || value === "SUPER_ADMIN") {
+    return "SUPERADMIN";
   }
 
-  if (value === "COORDINATOR") {
-    return "COORDINATOR";
+  if (value === "ADMIN" || value === "COORDINATOR") {
+    return "ADMIN";
   }
 
   if (value === "STUDENT") {

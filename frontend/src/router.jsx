@@ -16,6 +16,8 @@ const SprintsPage = lazy(() => import("./pages/SprintsPage"));
 const UsersPage = lazy(() => import("./pages/UsersPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const LogsPage = lazy(() => import("./pages/LogsPage"));
+const SubmissionsPage = lazy(() => import("./pages/SubmissionsPage"));
 
 const suspense = (element) => <Suspense fallback={<LoadingScreen />}>{element}</Suspense>;
 
@@ -39,11 +41,13 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: suspense(<DashboardPage />) },
       { path: "tasks", element: suspense(<TasksPage />) },
+      { path: "submissions", element: suspense(<SubmissionsPage />) },
       { path: "businesses", element: suspense(<BusinessesPage />) },
       { path: "sprints", element: suspense(<SprintsPage />) },
       { path: "users", element: suspense(<UsersPage />) },
       { path: "profile", element: suspense(<ProfilePage />) },
-      { path: "settings", element: suspense(<SettingsPage />) }
+      { path: "settings", element: suspense(<SettingsPage />) },
+      { path: "logs", element: suspense(<LogsPage />) }
     ]
   },
   { path: "*", element: <Navigate to="/" replace /> }

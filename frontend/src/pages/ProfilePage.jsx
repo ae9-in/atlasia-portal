@@ -19,8 +19,8 @@ const ProfilePage = () => {
           <p className="mt-2 text-lg text-white">{role}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5 md:col-span-2">
-          <p className="text-sm text-slate-400">Business</p>
-          <p className="mt-2 text-lg text-white">{user?.businessId?.name || "Not assigned"}</p>
+          <p className="text-sm text-slate-400">College</p>
+          <p className="mt-2 text-lg text-white">{user?.college || "Not specified"}</p>
         </div>
       </div>
     </div>

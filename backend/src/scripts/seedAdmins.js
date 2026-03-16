@@ -2,24 +2,22 @@ const connectDatabase = require("../config/db");
 const User = require("../models/User");
 
 const superAdmins = [
-  { name: "Atlasia Super Admin 01", email: "superadmin01@atlasia.local", password: "AtlasiaSuper01!", role: "SUPER_ADMIN" },
-  { name: "Atlasia Super Admin 02", email: "superadmin02@atlasia.local", password: "AtlasiaSuper02!", role: "SUPER_ADMIN" }
+  { name: "Atlasia Superadmin 01", email: "superadmin01@atlasia.local", password: "AtlasiaSuper01!", role: "SUPERADMIN" },
+  { name: "Atlasia Superadmin 02", email: "superadmin02@atlasia.local", password: "AtlasiaSuper02!", role: "SUPERADMIN" }
 ];
 
-const coordinators = [
-  { name: "Atlasia Coordinator 01", email: "coord01@atlasia.local", password: "AtlasiaCoord01!", role: "COORDINATOR" },
-  { name: "Atlasia Coordinator 02", email: "coord02@atlasia.local", password: "AtlasiaCoord02!", role: "COORDINATOR" },
-  { name: "Atlasia Coordinator 03", email: "coord03@atlasia.local", password: "AtlasiaCoord03!", role: "COORDINATOR" },
-  { name: "Atlasia Coordinator 04", email: "coord04@atlasia.local", password: "AtlasiaCoord04!", role: "COORDINATOR" },
-  { name: "Atlasia Coordinator 05", email: "coord05@atlasia.local", password: "AtlasiaCoord05!", role: "COORDINATOR" },
-  { name: "Atlasia Coordinator 06", email: "coord06@atlasia.local", password: "AtlasiaCoord06!", role: "COORDINATOR" },
-  { name: "Atlasia Coordinator 07", email: "coord07@atlasia.local", password: "AtlasiaCoord07!", role: "COORDINATOR" },
-  { name: "Atlasia Coordinator 08", email: "coord08@atlasia.local", password: "AtlasiaCoord08!", role: "COORDINATOR" },
-  { name: "Atlasia Coordinator 09", email: "coord09@atlasia.local", password: "AtlasiaCoord09!", role: "COORDINATOR" },
-  { name: "Atlasia Coordinator 10", email: "coord10@atlasia.local", password: "AtlasiaCoord10!", role: "COORDINATOR" }
+const admins = [
+  { name: "Suhas Krishna", email: "suhaskrishna@atlasia.com", password: "suhas@123", role: "ADMIN" },
+  { name: "Pramukh", email: "pramukh@atlasia.com", password: "pramukh@123", role: "ADMIN" },
+  { name: "Rahul Vaishnav", email: "rahulvaishnav@atlasia.com", password: "rahul@123", role: "ADMIN" },
+  { name: "Vishnu", email: "vishnu@atlasia.com", password: "vishnu@123", role: "ADMIN" },
+  { name: "Yogesh", email: "yogesh@atlasia.com", password: "yogesh@123", role: "ADMIN" },
+  { name: "Vedanth", email: "vedanth@atlasia.com", password: "vedanth@123", role: "ADMIN" },
+  { name: "Tanvi", email: "tanvi@atlasia.com", password: "tanvi@123", role: "ADMIN" },
+  { name: "Test Admin", email: "testadmin@atlasia.com", password: "test@123", role: "ADMIN" }
 ];
 
-const desiredUsers = [...superAdmins, ...coordinators];
+const desiredUsers = [...superAdmins, ...admins];
 const desiredEmails = desiredUsers.map((account) => account.email.toLowerCase());
 
 const resetPlatformUsers = async () => {
@@ -28,7 +26,7 @@ const resetPlatformUsers = async () => {
   const deleteResult = await User.deleteMany({
     $or: [
       { role: "admin" },
-      { role: { $in: ["SUPER_ADMIN", "COORDINATOR"] }, email: { $nin: desiredEmails } }
+      { role: { $in: ["SUPERADMIN", "ADMIN"] }, email: { $nin: desiredEmails } }
     ]
   });
 
@@ -56,13 +54,13 @@ const resetPlatformUsers = async () => {
     });
   }
 
-  const [superAdminCount, coordinatorCount] = await Promise.all([
-    User.countDocuments({ role: "SUPER_ADMIN" }),
-    User.countDocuments({ role: "COORDINATOR" })
+  const [superadminCount, adminCount] = await Promise.all([
+    User.countDocuments({ role: "SUPERADMIN" }),
+    User.countDocuments({ role: "ADMIN" })
   ]);
 
-  console.log(`Removed ${deleteResult.deletedCount} old admin/coordinator accounts.`);
-  console.log(`Platform users ready: ${superAdminCount} super admins, ${coordinatorCount} coordinators.`);
+  console.log(`Removed ${deleteResult.deletedCount} old admin accounts.`);
+  console.log(`Platform users ready: ${superadminCount} superadmins, ${adminCount} admins.`);
   process.exit(0);
 };
 

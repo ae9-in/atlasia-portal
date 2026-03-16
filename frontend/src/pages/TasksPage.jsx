@@ -15,6 +15,7 @@ const TasksPage = () => {
   const role = normalizeRole(user?.role);
   const queryClient = useQueryClient();
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [studentSearch, setStudentSearch] = useState("");
 
   const tasksQuery = useQuery({
     queryKey: ["tasks-page", role],
@@ -34,6 +35,11 @@ const TasksPage = () => {
     queryKey: ["task-reports", selectedTaskId],
     queryFn: () => atlasiaService.getTaskReports(selectedTaskId),
     enabled: !!selectedTaskId && role !== "STUDENT"
+  });
+  const businessesQuery = useQuery({
+    queryKey: ["businesses"],
+    queryFn: atlasiaService.getBusinesses,
+    enabled: role !== "STUDENT"
   });
 
   const createMutation = useMutation({
@@ -68,16 +74,23 @@ const TasksPage = () => {
     }
   });
 
-  const { register, handleSubmit, reset, watch } = useForm();
+  const { register, handleSubmit, reset, watch, setValue } = useForm({
+    defaultValues: { assignedTo: [] }
+  });
   const commentForm = useForm();
-  const students = studentsQuery.data?.users || [];
-  const selectedStudentId = watch("assignedTo");
-  const selectedStudent = students.find((item) => item._id === selectedStudentId);
-  const selectedBusinessName = selectedStudent?.businessId?.name || "Select a student to load the business";
-
-  if (tasksQuery.isLoading || sprintsQuery.isLoading || studentsQuery.isLoading) {
+  if (tasksQuery.isLoading || sprintsQuery.isLoading || studentsQuery.isLoading || (role !== "STUDENT" && businessesQuery.isLoading)) {
     return <LoadingScreen />;
   }
+
+  const students = studentsQuery.data?.users || [];
+  const businesses = businessesQuery.data?.businesses || [];
+  
+  const selectedStudentIds = watch("assignedTo") || [];
+  const selectedStudents = students.filter((s) => selectedStudentIds.includes(s._id));
+  const currentStudentBusinesses = [...new Set(selectedStudents.map((s) => s.businessId?.name).filter(Boolean))];
+  const selectedBusinessDisplay = currentStudentBusinesses.length > 0 
+    ? currentStudentBusinesses.join(", ") 
+    : "No business assigned yet";
 
   const tasks = tasksQuery.data?.tasks || [];
   const selectedCommentTaskId = commentForm.watch("taskId");
@@ -113,24 +126,73 @@ const TasksPage = () => {
               <label className="text-xs uppercase tracking-[0.2em] text-slate-400 px-1">End Date</label>
               <input type="date" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white" {...register("deadlineDate", { required: true })} />
             </div>
-            <select className="rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white lg:col-span-2" {...register("assignedTo", { required: true })}>
-              <option value="">Assign to student</option>
-              {students.map((item) => (
-                <option key={item._id} value={item._id}>{item.name} - {item.email}</option>
-              ))}
-            </select>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white/90">
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Business</p>
-              <p className="mt-2 text-base text-white">{selectedBusinessName}</p>
+            <div className="lg:col-span-2 space-y-3">
+              <label className="text-xs uppercase tracking-[0.2em] text-slate-400 px-1">Assign to Students</label>
+              <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-4">
+                <input 
+                  type="text" 
+                  placeholder="Search students..." 
+                  className="mb-4 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                  value={studentSearch}
+                  onChange={(e) => setStudentSearch(e.target.value)}
+                />
+                <div className="max-h-48 overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-white/10">
+                  {students.filter(s => 
+                    s.name.toLowerCase().includes(studentSearch.toLowerCase()) || 
+                    s.email.toLowerCase().includes(studentSearch.toLowerCase())
+                  ).map((item) => (
+                    <label key={item._id} className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 p-3 transition hover:bg-white/10 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="h-4 w-4 rounded border-white/20 bg-slate-800 text-brand-primary focus:ring-brand-primary"
+                        checked={selectedStudentIds.includes(item._id)}
+                        onChange={(e) => {
+                          const current = [...selectedStudentIds];
+                          if (e.target.checked) {
+                            setValue("assignedTo", [...current, item._id]);
+                          } else {
+                            setValue("assignedTo", current.filter(id => id !== item._id));
+                          }
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-white truncate">{item.name} {item.college ? `(${item.college})` : ''}</p>
+                        <p className="text-xs text-slate-400 truncate">{item.businessId?.name || "No Business"} • {item.email}</p>
+                      </div>
+                    </label>
+                  ))}
+                  {students.length === 0 && <p className="text-center text-sm text-slate-500 py-4">No students found.</p>}
+                </div>
+                <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
+                  <p className="text-xs text-slate-400">{selectedStudentIds.length} students selected</p>
+                  <button 
+                    type="button" 
+                    className="text-xs text-brand-secondary hover:underline"
+                    onClick={() => setValue("assignedTo", selectedStudentIds.length === students.length ? [] : students.map(s => s._id))}
+                  >
+                    {selectedStudentIds.length === students.length ? "Deselect All" : "Select All"}
+                  </button>
+                </div>
+              </div>
             </div>
-            <select className="rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white" {...register("sprintId", { required: true })}>
+            <div className="lg:col-span-2 space-y-3">
+              <label className="text-xs uppercase tracking-[0.2em] text-slate-400 px-1">Assign Business (Will update selected students)</label>
+              <select className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white" {...register("businessId", { required: true })}>
+                <option value="">Select business</option>
+                {businesses.map((item) => (
+                  <option key={item._id} value={item._id}>{item.name}</option>
+                ))}
+              </select>
+              <p className="px-2 text-[10px] text-slate-500 italic">Current student businesses: {selectedBusinessDisplay}</p>
+            </div>
+            <select className="rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white lg:col-span-2" {...register("sprintId", { required: true })}>
               <option value="">Select sprint</option>
               {(sprintsQuery.data?.sprints || []).map((item) => (
                 <option key={item._id} value={item._id}>{item.name}</option>
               ))}
             </select>
-            <button type="submit" className="rounded-2xl bg-gradient-to-r from-brand-primary to-brand-secondary px-4 py-3 font-semibold text-white lg:col-span-2" disabled={createMutation.isPending || !selectedStudent?.businessId?._id}>
-              {createMutation.isPending ? "Creating Task..." : "Create Task"}
+            <button type="submit" className="rounded-2xl bg-gradient-to-r from-brand-primary to-brand-secondary px-4 py-3 font-semibold text-white lg:col-span-2" disabled={createMutation.isPending || selectedStudentIds.length === 0}>
+              {createMutation.isPending ? "Creating Tasks..." : `Create Tasks for ${selectedStudentIds.length || 0} Students`}
             </button>
           </form>
         </div>
@@ -149,7 +211,12 @@ const TasksPage = () => {
               )}
             </div>
           ) },
-          ...(role !== "STUDENT" ? [{ key: "student", label: "Assigned To", render: (row) => row.assignedTo?.name || "-" }] : []),
+          ...(role !== "STUDENT" ? [{ key: "student", label: "Assigned To", render: (row) => (
+            <div className="flex flex-col">
+              <span className="text-white font-medium">{row.assignedTo?.name || "-"}</span>
+              {row.assignedTo?.college && <span className="text-[10px] text-brand-secondary">{row.assignedTo.college}</span>}
+            </div>
+          ) }] : []),
           { key: "business", label: "Business", render: (row) => {
             const name = row.businessId?.name;
             if (!name) return "-";
@@ -175,22 +242,31 @@ const TasksPage = () => {
             ? {
                 key: "report",
                 label: "Upload Report",
-                render: (row) => (
-                  <label className="cursor-pointer text-brand-secondary">
-                    Upload File
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="*"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) {
-                          reportMutation.mutate({ taskId: row._id, file });
-                        }
-                      }}
-                    />
-                  </label>
-                )
+                render: (row) => {
+                  const count = row.submissionCount || 0;
+                  const isLimitReached = count >= 3;
+                  return (
+                    <div className="flex flex-col gap-1">
+                      <label className={`${isLimitReached ? 'opacity-30 cursor-not-allowed text-white/50' : 'cursor-pointer text-brand-secondary hover:underline'}`}>
+                        {isLimitReached ? "Limit Reached" : "Upload File"}
+                        {!isLimitReached && (
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="*"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (file) {
+                                reportMutation.mutate({ taskId: row._id, file });
+                              }
+                            }}
+                          />
+                        )}
+                      </label>
+                      <span className="text-[10px] text-slate-400">({count}/3 uploaded)</span>
+                    </div>
+                  );
+                }
               }
             : {
                 key: "actions",
@@ -226,7 +302,9 @@ const TasksPage = () => {
             <select className="mb-4 w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white" {...commentForm.register("taskId", { required: true })}>
               <option value="">Select task</option>
               {tasks.map((task) => (
-                <option key={task._id} value={task._id}>{task.title}</option>
+                <option key={task._id} value={task._id}>
+                  {task.title} {role !== "STUDENT" ? `(${task.assignedTo?.name || 'Unknown'} - ${task.assignedTo?.college || 'No College'})` : ''}
+                </option>
               ))}
             </select>
 
@@ -269,9 +347,14 @@ const TasksPage = () => {
                 <div key={report._id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <p className="font-semibold text-white">{report.studentId?.name}</p>
                   <p className="mt-2 text-sm text-slate-300">{report.taskId?.title}</p>
-                  <a className="mt-3 inline-block text-brand-secondary" href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${report._id}`}>
-                    Download report
-                  </a>
+                  <div className="mt-3 flex gap-3">
+                    <a className="text-brand-secondary" target="_blank" rel="noreferrer" href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${report._id}?view=true`}>
+                      View
+                    </a>
+                    <a className="text-slate-400" href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${report._id}`}>
+                      Download
+                    </a>
+                  </div>
                 </div>
               ))}
               {!reportsQuery.data?.reports?.length ? <p className="text-slate-400">Select a task to inspect reports.</p> : null}

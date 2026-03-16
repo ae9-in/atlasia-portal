@@ -6,6 +6,7 @@ const Task = require("../models/Task");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { reportFilesRoot } = require("../utils/paths");
+const { logActivity } = require("../services/logService");
 
 const uploadReport = asyncHandler(async (req, res) => {
   const taskId = req.params.taskId || req.body.taskId;
@@ -25,10 +26,10 @@ const uploadReport = asyncHandler(async (req, res) => {
     throw new AppError("You can only submit reports for your assigned tasks", StatusCodes.FORBIDDEN);
   }
 
-  const existingSubmission = await ReportSubmission.findOne({ studentId: req.user._id, taskId });
-  if (existingSubmission) {
+  const submissionCount = await ReportSubmission.countDocuments({ studentId: req.user._id, taskId });
+  if (submissionCount >= 3) {
     fs.unlink(req.file.path, () => {});
-    throw new AppError("A report for this task has already been submitted", StatusCodes.CONFLICT);
+    throw new AppError("Maximum of 3 reports allowed per task.", StatusCodes.CONFLICT);
   }
 
   const submission = await ReportSubmission.create({
@@ -56,7 +57,11 @@ const getTaskReports = asyncHandler(async (req, res) => {
   const query = req.query.taskId ? { taskId: req.query.taskId } : {};
   const reports = await ReportSubmission.find(query)
     .sort({ submittedAt: -1 })
-    .populate("studentId", "name email businessId")
+    .populate({
+      path: "studentId",
+      select: "name email businessId college",
+      populate: { path: "businessId", select: "name" }
+    })
     .populate("taskId", "title status assignedTo createdBy");
 
   res.status(StatusCodes.OK).json({ reports });
@@ -70,8 +75,8 @@ const downloadReport = asyncHandler(async (req, res) => {
   }
 
   const canAccess =
-    req.user.role === "SUPER_ADMIN" ||
-    req.user.role === "COORDINATOR" ||
+    req.user.role === "SUPERADMIN" ||
+    req.user.role === "ADMIN" ||
     String(submission.studentId) === String(req.user._id) ||
     String(submission.taskId.createdBy) === String(req.user._id);
 
@@ -79,9 +84,35 @@ const downloadReport = asyncHandler(async (req, res) => {
     throw new AppError("Access denied", StatusCodes.FORBIDDEN);
   }
 
-  const filePath = path.join(reportFilesRoot, submission.reportFile);
+  if (["ADMIN", "SUPERADMIN"].includes(req.user.role)) {
+    await logActivity({
+      userId: req.user._id,
+      action: req.query.view === 'true' ? "VIEW_REPORT" : "DOWNLOAD_REPORT",
+      details: `${req.query.view === 'true' ? 'Viewed' : 'Downloaded'} report for submission ${submission._id}`,
+      metadata: { submissionId: submission._id, taskId: submission.taskId?._id },
+      ip: req.ip
+    });
+  }
+
+  const filePath = path.resolve(reportFilesRoot, submission.reportFile);
   if (!fs.existsSync(filePath)) {
-    throw new AppError("Report file not found", StatusCodes.NOT_FOUND);
+    console.error(`Report file not found at: ${filePath}`);
+    throw new AppError("Report file not found on server storage.", StatusCodes.NOT_FOUND);
+  }
+
+  if (req.query.view === "true") {
+    const ext = path.extname(filePath).toLowerCase();
+    const codeExtensions = ['.js', '.jsx', '.ts', '.tsx', '.py', '.java', '.c', '.cpp', '.h', '.html', '.css', '.json', '.txt', '.md'];
+    
+    const headers = {
+      "Content-Disposition": "inline"
+    };
+
+    if (codeExtensions.includes(ext)) {
+      headers["Content-Type"] = "text/plain";
+    }
+
+    return res.sendFile(filePath, { headers });
   }
 
   return res.download(filePath);

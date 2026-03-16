@@ -7,6 +7,7 @@ const notFound = (req, _res, next) => {
 };
 
 const errorHandler = (error, _req, res, _next) => {
+  console.error("Backend Error:", error);
   const statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
 
   if (error.code === 11000) {
@@ -36,7 +37,9 @@ const errorHandler = (error, _req, res, _next) => {
   }
 
   return res.status(statusCode).json({
-    message: error.message || "Something went wrong"
+    message: error.message || "Something went wrong",
+    name: error.name,
+    stack: process.env.NODE_ENV === "development" ? error.stack : undefined
   });
 };
 

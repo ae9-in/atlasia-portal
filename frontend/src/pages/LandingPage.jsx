@@ -12,7 +12,7 @@ const features = [
   { title: "Structured businesses", description: "Organize students under Atlasia businesses and keep work scoped cleanly.", icon: BriefcaseBusiness },
   { title: "Sprint-based delivery", description: "Run task cycles by sprint with deadlines, attachments, and expected outcomes.", icon: TimerReset },
   { title: "Strict task visibility", description: "Students only see the tasks assigned to them. Nothing leaks across accounts.", icon: ShieldCheck },
-  { title: "Coordinator workflows", description: "Assign tasks, track submissions, comment on progress, and review outcomes.", icon: FolderKanban }
+  { title: "Admin workflows", description: "Assign tasks, track submissions, comment on progress, and review outcomes.", icon: FolderKanban }
 ];
 
 const LandingPage = () => {
@@ -37,7 +37,7 @@ const LandingPage = () => {
             Track Student Productivity with Structured Task Management
           </motion.h1>
           <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-6 max-w-2xl text-xl text-slate-300">
-            Atlasia Workbook gives super admins, coordinators, and students a clean operational system for businesses, sprints, tasks, comments, and ZIP report submissions.
+            Atlasia Workbook gives superadmins, admins, and students a clean operational system for businesses, sprints, tasks, comments, and ZIP report submissions.
           </motion.p>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mt-10 flex flex-wrap gap-4">
             <Link to={user ? "/workspace" : "/auth/login"} className="rounded-2xl bg-gradient-to-r from-brand-primary to-brand-secondary px-6 py-4 font-semibold text-white shadow-glow">
@@ -67,7 +67,7 @@ const LandingPage = () => {
       </section>
 
       <section className="section-container py-24">
-        <SectionHeading eyebrow="Capabilities" title="Modern SaaS controls for Atlasia coordinators and students" />
+        <SectionHeading eyebrow="Capabilities" title="Modern SaaS controls for Atlasia admins and students" />
         <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {features.map(({ title, description, icon: Icon }) => (
             <div key={title} className="glass-panel p-6">
@@ -85,8 +85,8 @@ const LandingPage = () => {
         <SectionHeading eyebrow="How It Works" title="Three roles, one clean workbook system" align="center" />
         <div className="mt-12 grid gap-6 md:grid-cols-3">
           {[
-            "Super admins create businesses, sprints, coordinators, and review platform analytics.",
-            "Coordinators create tasks, attach files, assign work to students, and monitor progress.",
+            "Superadmins create businesses, sprints, admins, and review platform analytics.",
+            "Admins create tasks, attach files, assign work to students, and monitor progress.",
             "Students see only their assigned tasks, comment on progress, and upload ZIP reports."
           ].map((step, index) => (
             <div key={step} className="glass-panel p-6">

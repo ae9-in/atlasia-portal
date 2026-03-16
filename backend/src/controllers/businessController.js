@@ -7,6 +7,7 @@ const ReportSubmission = require("../models/ReportSubmission");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { taskFilesRoot } = require("../utils/paths");
+const { logActivity } = require("../services/logService");
 
 const createBusiness = asyncHandler(async (req, res) => {
   const { name, description } = req.body;
@@ -16,6 +17,15 @@ const createBusiness = asyncHandler(async (req, res) => {
   }
 
   const business = await Business.create({ name, description });
+
+  await logActivity({
+    userId: req.user._id,
+    action: "CREATE_BUSINESS",
+    details: `Created business: ${name}`,
+    metadata: { businessId: business._id },
+    ip: req.ip
+  });
+
   res.status(StatusCodes.CREATED).json({ message: "Business created successfully", business });
 });
 
@@ -49,6 +59,14 @@ const deleteBusiness = asyncHandler(async (req, res) => {
 
   // Delete the business itself
   await Business.findByIdAndDelete(req.params.id);
+
+  await logActivity({
+    userId: req.user._id,
+    action: "DELETE_BUSINESS",
+    details: `Deleted business: ${business.name}`,
+    metadata: { businessId: business._id },
+    ip: req.ip
+  });
 
   res.status(StatusCodes.OK).json({ message: "Business deleted successfully" });
 });

@@ -12,10 +12,9 @@ export const atlasiaService = {
   async createTask(payload) {
     const formData = new FormData();
     Object.entries(payload).forEach(([key, value]) => {
-      if (key === "attachments") {
-        for (const file of value || []) {
-          formData.append("attachments", file);
-        }
+      if (value === undefined || value === null) return;
+      if (Array.isArray(value)) {
+        value.forEach((item) => formData.append(key, item));
       } else {
         formData.append(key, value);
       }
@@ -82,12 +81,16 @@ export const atlasiaService = {
     const { data } = await api.patch(`/api/admin/users/${id}/business`, { businessId });
     return data;
   },
-  async getCoordinatorOverview() {
+  async getAdminOverview() {
     const { data } = await api.get("/api/admin/coordinator-overview");
     return data;
   },
-  async getSuperOverview() {
+  async getSuperadminOverview() {
     const { data } = await api.get("/api/admin/super-overview");
+    return data;
+  },
+  async getActivityLogs() {
+    const { data } = await api.get("/api/admin/activity-logs");
     return data;
   }
 };

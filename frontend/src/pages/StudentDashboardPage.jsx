@@ -51,8 +51,8 @@ const StudentDashboardPage = () => {
     <div className="space-y-8">
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Today's Task" value={tasks.length} hint="Assigned tasks visible on your board." icon={ClipboardList} />
-        <StatCard label="Upload Report" value="FILE" hint="Maximum 20MB, one upload per day." icon={CloudUpload} />
-        <StatCard label="Submission Status" value={submittedToday ? "Submitted" : "Pending"} hint="Today's report state updates instantly." icon={CheckCircle2} />
+        <StatCard label="Upload Report" value="FILE" hint="Maximum 20MB, up to 3 uploads per task." icon={CloudUpload} />
+        <StatCard label="Submissions" value={reports.length} hint="Total reports across all your tasks." icon={CheckCircle2} />
         <StatCard label="Previous Reports" value={reports.length} hint="Your recent submissions and history." icon={History} />
       </div>
 
@@ -87,9 +87,14 @@ const StudentDashboardPage = () => {
                   key: "download",
                   label: "Download",
                   render: (row) => (
-                    <a href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${row.reportFile}`} className="text-brand-secondary">
-                      Download
-                    </a>
+                    <div className="flex gap-3">
+                      <a href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${row._id}?view=true`} target="_blank" rel="noreferrer" className="text-brand-secondary">
+                        View
+                      </a>
+                      <a href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${row._id}`} className="text-slate-400">
+                        Download
+                      </a>
+                    </div>
                   )
                 },
                 { key: "status", label: "Status", render: (row) => row.status }

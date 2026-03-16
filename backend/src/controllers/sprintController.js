@@ -2,6 +2,7 @@ const { StatusCodes } = require("http-status-codes");
 const Sprint = require("../models/Sprint");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
+const { logActivity } = require("../services/logService");
 
 const createSprint = asyncHandler(async (req, res) => {
   const { name, startDate, endDate } = req.body;
@@ -15,6 +16,14 @@ const createSprint = asyncHandler(async (req, res) => {
     startDate,
     endDate,
     createdBy: req.user._id
+  });
+
+  await logActivity({
+    userId: req.user._id,
+    action: "CREATE_SPRINT",
+    details: `Created sprint: ${name}`,
+    metadata: { sprintId: sprint._id },
+    ip: req.ip
   });
 
   res.status(StatusCodes.CREATED).json({ message: "Sprint created successfully", sprint });

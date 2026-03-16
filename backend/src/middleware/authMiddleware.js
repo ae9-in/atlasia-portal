@@ -43,8 +43,8 @@ const requireRole = (...roles) => (req, _res, next) => {
 module.exports = {
   verifyToken,
   requireRole,
-  requireSuperAdmin: requireRole("SUPER_ADMIN"),
-  requireCoordinator: requireRole("COORDINATOR"),
+  requireSuperadmin: requireRole("SUPERADMIN"),
+  requireAdmin: requireRole("ADMIN"),
   requireStudent: requireRole("STUDENT"),
-  requireCoordinatorOrSuperAdmin: requireRole("COORDINATOR", "SUPER_ADMIN")
+  requireAdminOrSuperadmin: requireRole("ADMIN", "SUPERADMIN")
 };

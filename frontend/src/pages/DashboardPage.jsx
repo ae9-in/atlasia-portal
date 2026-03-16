@@ -18,10 +18,10 @@ const DashboardPage = () => {
   const tasksQuery = useQuery({ queryKey: ["dashboard-tasks", role], queryFn: role === "STUDENT" ? atlasiaService.getMyTasks : atlasiaService.getAllTasks });
   const businessesQuery = useQuery({ queryKey: ["businesses"], queryFn: atlasiaService.getBusinesses, enabled: role !== "STUDENT" });
   const reportsQuery = useQuery({ queryKey: ["student-reports"], queryFn: atlasiaService.getStudentReports, enabled: role === "STUDENT" });
-  const coordinatorOverview = useQuery({ queryKey: ["coord-overview"], queryFn: atlasiaService.getCoordinatorOverview, enabled: role === "COORDINATOR" });
-  const superOverview = useQuery({ queryKey: ["super-overview"], queryFn: atlasiaService.getSuperOverview, enabled: role === "SUPER_ADMIN" });
+  const adminOverview = useQuery({ queryKey: ["admin-overview"], queryFn: atlasiaService.getAdminOverview, enabled: role === "ADMIN" });
+  const superOverview = useQuery({ queryKey: ["super-overview"], queryFn: atlasiaService.getSuperadminOverview, enabled: role === "SUPERADMIN" });
 
-  if (tasksQuery.isLoading || coordinatorOverview.isLoading || superOverview.isLoading || (role !== "STUDENT" && businessesQuery.isLoading)) {
+  if (tasksQuery.isLoading || adminOverview.isLoading || superOverview.isLoading || (role !== "STUDENT" && businessesQuery.isLoading)) {
     return <LoadingScreen />;
   }
 
@@ -55,7 +55,12 @@ const DashboardPage = () => {
       <DataTable
         columns={[
           { key: "title", label: "Title" },
-          ...(role !== "STUDENT" ? [{ key: "student", label: "Assigned To", render: (row) => row.assignedTo?.name || "-" }] : []),
+          ...(role !== "STUDENT" ? [{ key: "student", label: "Assigned To", render: (row) => (
+            <div className="flex flex-col">
+              <span className="text-white font-medium">{row.assignedTo?.name || "-"}</span>
+              {row.assignedTo?.college && <span className="text-[10px] text-brand-secondary">{row.assignedTo.college}</span>}
+            </div>
+          ) }] : []),
           { key: "business", label: "Business", render: (row) => {
             const name = row.businessId?.name;
             if (!name) return "-";
@@ -100,18 +105,18 @@ const DashboardPage = () => {
     );
   }
 
-  if (role === "COORDINATOR") {
-    const stats = coordinatorOverview.data?.stats || {};
+  if (role === "ADMIN") {
+    const stats = adminOverview.data?.stats || {};
     return (
       <div className="space-y-8">
         <div>
-          <p className="text-sm uppercase tracking-[0.35em] text-brand-secondary">Coordinator Dashboard</p>
+          <p className="text-sm uppercase tracking-[0.35em] text-brand-secondary">Admin Dashboard</p>
           <h1 className="mt-2 text-4xl font-bold text-white">Manage student delivery across Atlasia</h1>
         </div>
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           <StatCard label="Total Students" value={stats.totalStudents || 0} hint="Students across your workbook view." icon={Users} />
-          <StatCard label="Tasks Created" value={stats.tasksCreated || 0} hint="Tasks authored by coordinators." icon={ClipboardCheck} />
-          <StatCard label="Reports Submitted" value={stats.reportsSubmitted || 0} hint="Reports visible to coordinators." icon={FileArchive} />
+          <StatCard label="Tasks Created" value={stats.tasksCreated || 0} hint="Tasks authored by admins." icon={ClipboardCheck} />
+          <StatCard label="Reports Submitted" value={stats.reportsSubmitted || 0} hint="Reports visible to admins." icon={FileArchive} />
           <StatCard label="Pending Reports" value={stats.pendingReports || 0} hint="Assigned work still awaiting upload." icon={Activity} />
         </div>
         {renderTasksTable()}
@@ -126,12 +131,12 @@ const DashboardPage = () => {
   return (
     <div className="space-y-8">
       <div>
-        <p className="text-sm uppercase tracking-[0.35em] text-brand-secondary">Super Admin Dashboard</p>
+        <p className="text-sm uppercase tracking-[0.35em] text-brand-secondary">Superadmin Dashboard</p>
         <h1 className="mt-2 text-4xl font-bold text-white">Platform-wide analytics for Atlasia Workbook</h1>
       </div>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total Students" value={stats.totalStudents || 0} hint="Student accounts on the platform." icon={Users} />
-        <StatCard label="Total Coordinators" value={stats.totalCoordinators || 0} hint="Coordinator accounts managed centrally." icon={Users} />
+        <StatCard label="Total Admins" value={stats.totalAdmins || 0} hint="Admin accounts managed centrally." icon={Users} />
         <StatCard label="Total Businesses" value={stats.totalBusinesses || 0} hint="Atlasia business workstreams." icon={BriefcaseBusiness} />
         <StatCard label="Total Tasks" value={stats.totalTasks || 0} hint="Workbook tasks across all sprints." icon={ClipboardCheck} />
       </div>
