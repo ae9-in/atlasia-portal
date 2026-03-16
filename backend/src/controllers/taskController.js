@@ -28,7 +28,7 @@ const createTask = asyncHandler(async (req, res) => {
   } = req.body;
 
   if (!title || !description || !expectedOutcome || !daysRequired || !startDate || !deadlineDate || !sprintId || !assignedTo) {
-    throw new AppError("All task fields are required", StatusCodes.BAD_REQUEST);
+    throw new AppError(`All task fields are required. Missing one or more of: title, description, expectedOutcome, daysRequired, startDate, deadlineDate, sprintId, assignedTo. Received body: ${JSON.stringify(req.body)}`, StatusCodes.BAD_REQUEST);
   }
 
   const student = await User.findOne({ _id: assignedTo, role: "STUDENT", isActive: true }).populate("businessId", "name");

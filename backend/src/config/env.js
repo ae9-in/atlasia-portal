@@ -22,7 +22,7 @@ const required = (name) => {
 
 module.exports = {
   nodeEnv: process.env.NODE_ENV || "development",
-  port: Number(required("PORT")),
+  port: Number(process.env.PORT || 5000),
   clientUrl: required("CLIENT_URL"),
   mongoUri: required("MONGODB_URI"),
   jwtSecret: required("JWT_SECRET"),

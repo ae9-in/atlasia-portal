@@ -96,6 +96,7 @@ const TasksPage = () => {
           <form
             className="mt-6 grid gap-4 lg:grid-cols-2"
             onSubmit={handleSubmit(async (values) => {
+              console.log("Create Task Values:", values);
               await createMutation.mutateAsync({ ...values, attachments: [] });
               reset();
             })}
