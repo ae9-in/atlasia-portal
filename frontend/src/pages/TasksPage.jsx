@@ -104,7 +104,14 @@ const TasksPage = () => {
             <input className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white" placeholder="Expected Outcome" {...register("expectedOutcome", { required: true })} />
             <textarea className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white lg:col-span-2" placeholder="Description" {...register("description", { required: true })} />
             <input type="number" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white" placeholder="Days Required" {...register("daysRequired", { required: true })} />
-            <input type="date" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white" {...register("deadlineDate", { required: true })} />
+            <div className="flex flex-col gap-1">
+              <label className="text-xs uppercase tracking-[0.2em] text-slate-400 px-1">Start Date</label>
+              <input type="date" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white" {...register("startDate", { required: true })} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs uppercase tracking-[0.2em] text-slate-400 px-1">End Date</label>
+              <input type="date" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white" {...register("deadlineDate", { required: true })} />
+            </div>
             <select className="rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white lg:col-span-2" {...register("assignedTo", { required: true })}>
               <option value="">Assign to student</option>
               {students.map((item) => (
@@ -154,7 +161,12 @@ const TasksPage = () => {
             return <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold text-white/90 ${colorClass}`}>{name}</span>;
           } },
           { key: "sprint", label: "Sprint", render: (row) => row.sprintId?.name || "-" },
-          { key: "deadline", label: "Deadline", render: (row) => formatDate(row.deadlineDate) },
+          { key: "deadline", label: "Dates", render: (row) => (
+            <div className="text-xs space-y-1">
+              <div><span className="text-slate-400">Start: </span><span className="text-white">{formatDate(row.startDate)}</span></div>
+              <div><span className="text-slate-400">End: </span><span className="text-white">{formatDate(row.deadlineDate)}</span></div>
+            </div>
+          ) },
           { key: "status", label: "Status", render: (row) => (
             <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">{row.status}</span>
           ) },
@@ -164,11 +176,11 @@ const TasksPage = () => {
                 label: "Upload Report",
                 render: (row) => (
                   <label className="cursor-pointer text-brand-secondary">
-                    Upload ZIP
+                    Upload File
                     <input
                       type="file"
                       className="hidden"
-                      accept=".zip"
+                      accept="*"
                       onChange={(event) => {
                         const file = event.target.files?.[0];
                         if (file) {
@@ -199,7 +211,14 @@ const TasksPage = () => {
       />
 
       <div className="grid gap-8 xl:grid-cols-2">
-        <div className="glass-panel p-6 flex flex-col h-full">
+        <form
+          className="glass-panel p-6 flex flex-col h-full"
+          onSubmit={commentForm.handleSubmit(async (values) => {
+            console.log("Submitting comment values:", values);
+            await commentMutation.mutateAsync(values);
+            commentForm.setValue("message", "");
+          })}
+        >
           <h2 className="text-2xl font-bold text-white">Task comments</h2>
           
           <div className="mt-6 flex-1">
@@ -212,16 +231,7 @@ const TasksPage = () => {
 
             {selectedCommentTask ? (
               <div className="mb-4 space-y-4">
-                <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-4">
-                  <h3 className="font-bold text-white mb-2">{selectedCommentTask.title}</h3>
-                  <p className="text-sm text-slate-300 mb-4 whitespace-pre-wrap">{selectedCommentTask.description}</p>
-                  {selectedCommentTask.expectedOutcome && (
-                    <div className="rounded-xl bg-brand-primary/10 p-3 border border-brand-primary/20">
-                      <p className="text-xs uppercase tracking-[0.2em] text-brand-secondary mb-1">Expected Outcome</p>
-                      <p className="text-sm text-white/90">{selectedCommentTask.expectedOutcome}</p>
-                    </div>
-                  )}
-                </div>
+
 
                 <div className="max-h-[300px] space-y-4 overflow-y-auto rounded-2xl border border-white/10 bg-black/20 p-4">
                   {selectedCommentTask.comments?.length > 0 ? (
@@ -242,19 +252,13 @@ const TasksPage = () => {
             ) : null}
           </div>
 
-          <form
-            className="mt-auto space-y-4"
-            onSubmit={commentForm.handleSubmit(async (values) => {
-              await commentMutation.mutateAsync(values);
-              commentForm.setValue("message", "");
-            })}
-          >
+          <div className="mt-auto space-y-4">
             <textarea className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white" rows={3} placeholder="Write a comment" {...commentForm.register("message", { required: true })} />
             <button type="submit" className="w-full rounded-2xl bg-white px-5 py-3 font-semibold text-slate-950 disabled:opacity-50" disabled={!selectedCommentTaskId || commentMutation.isPending}>
               {commentMutation.isPending ? "Adding..." : "Add Comment"}
             </button>
-          </form>
-        </div>
+          </div>
+        </form>
 
         {role !== "STUDENT" ? (
           <div className="glass-panel p-6">

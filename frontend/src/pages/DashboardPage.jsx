@@ -94,7 +94,7 @@ const DashboardPage = () => {
           <StatCard label="Assigned Tasks" value={myTasks.length} hint="Tasks visible only to you." icon={ClipboardCheck} />
           <StatCard label="Pending Tasks" value={pending} hint="Still in progress or not submitted." icon={Activity} />
           <StatCard label="Completed Tasks" value={completed} hint="Submitted or reviewed work items." icon={FileArchive} />
-          <StatCard label="Reports Uploaded" value={reports.length} hint="ZIP reports successfully uploaded." icon={FileArchive} />
+          <StatCard label="Reports Uploaded" value={reports.length} hint="Reports successfully uploaded." icon={FileArchive} />
         </div>
       </div>
     );

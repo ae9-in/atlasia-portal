@@ -21,12 +21,13 @@ const createTask = asyncHandler(async (req, res) => {
     description,
     expectedOutcome,
     daysRequired,
+    startDate,
     deadlineDate,
     sprintId,
     assignedTo
   } = req.body;
 
-  if (!title || !description || !expectedOutcome || !daysRequired || !deadlineDate || !sprintId || !assignedTo) {
+  if (!title || !description || !expectedOutcome || !daysRequired || !startDate || !deadlineDate || !sprintId || !assignedTo) {
     throw new AppError("All task fields are required", StatusCodes.BAD_REQUEST);
   }
 
@@ -46,6 +47,7 @@ const createTask = asyncHandler(async (req, res) => {
     description,
     expectedOutcome,
     daysRequired,
+    startDate,
     deadlineDate,
     attachments,
     businessId: student.businessId._id,
@@ -90,9 +92,9 @@ const getAllTasks = asyncHandler(async (req, res) => {
 
 const addComment = asyncHandler(async (req, res) => {
   const { taskId, message } = req.body;
-
+  
   if (!taskId || !message) {
-    throw new AppError("Task and comment message are required", StatusCodes.BAD_REQUEST);
+    throw new AppError(`Task and comment message are required. Received taskId: ${taskId}, message: ${message}`, StatusCodes.BAD_REQUEST);
   }
 
   const task = await Task.findById(taskId);

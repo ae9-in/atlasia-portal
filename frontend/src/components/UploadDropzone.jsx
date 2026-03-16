@@ -38,7 +38,7 @@ const UploadDropzone = ({ onFileSelect, disabled }) => {
       <input
         ref={inputRef}
         type="file"
-        accept=".zip,application/zip"
+        accept="*"
         className="hidden"
         onChange={(event) => handleFile(event.target.files?.[0])}
         disabled={disabled}
@@ -46,9 +46,9 @@ const UploadDropzone = ({ onFileSelect, disabled }) => {
       <div className="mb-5 rounded-full bg-white/10 p-4 text-brand-secondary">
         {isDragging ? <FileArchive size={28} /> : <UploadCloud size={28} />}
       </div>
-      <h3 className="text-xl font-semibold text-white">Upload Daily Report (.zip only)</h3>
+      <h3 className="text-xl font-semibold text-white">Upload Daily Report</h3>
       <p className="mt-3 max-w-md text-sm text-slate-300">
-        Drag and drop a report archive or click to browse. Maximum size 25MB and only one submission is allowed per day.
+        Drag and drop your report file or click to browse. Accepted formats: PDF, DOCX, CSV, ZIP, and more. Maximum size 25MB, one submission per day.
       </p>
     </motion.div>
   );

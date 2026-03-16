@@ -36,10 +36,6 @@ const StudentDashboardPage = () => {
     if (!file) {
       return;
     }
-    if (!file.name.toLowerCase().endsWith(".zip")) {
-      toast.error("Only .zip files are allowed");
-      return;
-    }
     if (file.size > 20 * 1024 * 1024) {
       toast.error("File must be 20MB or smaller");
       return;
@@ -55,7 +51,7 @@ const StudentDashboardPage = () => {
     <div className="space-y-8">
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Today's Task" value={tasks.length} hint="Assigned tasks visible on your board." icon={ClipboardList} />
-        <StatCard label="Upload Report" value="ZIP" hint="Maximum 20MB, one upload per day." icon={CloudUpload} />
+        <StatCard label="Upload Report" value="FILE" hint="Maximum 20MB, one upload per day." icon={CloudUpload} />
         <StatCard label="Submission Status" value={submittedToday ? "Submitted" : "Pending"} hint="Today's report state updates instantly." icon={CheckCircle2} />
         <StatCard label="Previous Reports" value={reports.length} hint="Your recent submissions and history." icon={History} />
       </div>
@@ -72,7 +68,7 @@ const StudentDashboardPage = () => {
               <div>
                 <p className="text-2xl font-bold text-white">{submittedToday ? "Submitted" : "Pending"}</p>
                 <p className="mt-2 text-sm text-slate-300">
-                  {submittedToday ? "Your report for today has been recorded." : "Upload your ZIP archive before the day ends."}
+                  {submittedToday ? "Your report for today has been recorded." : "Upload your report file before the day ends."}
                 </p>
               </div>
             </div>
