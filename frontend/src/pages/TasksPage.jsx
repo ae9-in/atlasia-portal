@@ -80,6 +80,8 @@ const TasksPage = () => {
   }
 
   const tasks = tasksQuery.data?.tasks || [];
+  const selectedCommentTaskId = commentForm.watch("taskId");
+  const selectedCommentTask = tasks.find((t) => t._id === selectedCommentTaskId);
 
   return (
     <div className="space-y-8">
@@ -128,11 +130,34 @@ const TasksPage = () => {
 
       <DataTable
         columns={[
-          { key: "title", label: "Title" },
-          { key: "business", label: "Business", render: (row) => row.businessId?.name || "-" },
+          { key: "title", label: "Task Info", render: (row) => (
+            <div className="max-w-[16rem] lg:max-w-xs">
+              <p className="font-semibold text-white">{row.title}</p>
+              <p className="mt-1 line-clamp-2 text-xs text-slate-400" title={row.description}>{row.description}</p>
+              {row.expectedOutcome && (
+                <p className="mt-1 line-clamp-1 text-xs text-brand-secondary" title={row.expectedOutcome}>
+                  <span className="opacity-75">Target:</span> {row.expectedOutcome}
+                </p>
+              )}
+            </div>
+          ) },
+          ...(role !== "STUDENT" ? [{ key: "student", label: "Assigned To", render: (row) => row.assignedTo?.name || "-" }] : []),
+          { key: "business", label: "Business", render: (row) => {
+            const name = row.businessId?.name;
+            if (!name) return "-";
+            const colors = ["bg-rose-500", "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+              hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const colorClass = colors[Math.abs(hash) % colors.length];
+            return <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold text-white/90 ${colorClass}`}>{name}</span>;
+          } },
           { key: "sprint", label: "Sprint", render: (row) => row.sprintId?.name || "-" },
           { key: "deadline", label: "Deadline", render: (row) => formatDate(row.deadlineDate) },
-          { key: "status", label: "Status" },
+          { key: "status", label: "Status", render: (row) => (
+            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">{row.status}</span>
+          ) },
           role === "STUDENT"
             ? {
                 key: "report",
@@ -174,23 +199,60 @@ const TasksPage = () => {
       />
 
       <div className="grid gap-8 xl:grid-cols-2">
-        <div className="glass-panel p-6">
+        <div className="glass-panel p-6 flex flex-col h-full">
           <h2 className="text-2xl font-bold text-white">Task comments</h2>
-          <form
-            className="mt-6 space-y-4"
-            onSubmit={commentForm.handleSubmit(async (values) => {
-              await commentMutation.mutateAsync(values);
-              commentForm.reset();
-            })}
-          >
-            <select className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white" {...commentForm.register("taskId", { required: true })}>
+          
+          <div className="mt-6 flex-1">
+            <select className="mb-4 w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white" {...commentForm.register("taskId", { required: true })}>
               <option value="">Select task</option>
               {tasks.map((task) => (
                 <option key={task._id} value={task._id}>{task.title}</option>
               ))}
             </select>
-            <textarea className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white" rows={4} placeholder="Write a comment" {...commentForm.register("message", { required: true })} />
-            <button type="submit" className="rounded-2xl bg-white px-5 py-3 font-semibold text-slate-950">Add Comment</button>
+
+            {selectedCommentTask ? (
+              <div className="mb-4 space-y-4">
+                <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-4">
+                  <h3 className="font-bold text-white mb-2">{selectedCommentTask.title}</h3>
+                  <p className="text-sm text-slate-300 mb-4 whitespace-pre-wrap">{selectedCommentTask.description}</p>
+                  {selectedCommentTask.expectedOutcome && (
+                    <div className="rounded-xl bg-brand-primary/10 p-3 border border-brand-primary/20">
+                      <p className="text-xs uppercase tracking-[0.2em] text-brand-secondary mb-1">Expected Outcome</p>
+                      <p className="text-sm text-white/90">{selectedCommentTask.expectedOutcome}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="max-h-[300px] space-y-4 overflow-y-auto rounded-2xl border border-white/10 bg-black/20 p-4">
+                  {selectedCommentTask.comments?.length > 0 ? (
+                    selectedCommentTask.comments.map((comment, idx) => (
+                      <div key={idx} className="rounded-xl border border-white/5 bg-white/5 p-3">
+                        <div className="flex items-center justify-between text-xs text-slate-400">
+                          <span className="font-semibold text-brand-secondary">{comment.userId?.name || "Unknown"}</span>
+                          <span>{new Date(comment.createdAt).toLocaleString()}</span>
+                        </div>
+                        <p className="mt-2 text-sm text-white/90">{comment.message}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-center text-sm text-slate-400">No comments yet</p>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <form
+            className="mt-auto space-y-4"
+            onSubmit={commentForm.handleSubmit(async (values) => {
+              await commentMutation.mutateAsync(values);
+              commentForm.setValue("message", "");
+            })}
+          >
+            <textarea className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white" rows={3} placeholder="Write a comment" {...commentForm.register("message", { required: true })} />
+            <button type="submit" className="w-full rounded-2xl bg-white px-5 py-3 font-semibold text-slate-950 disabled:opacity-50" disabled={!selectedCommentTaskId || commentMutation.isPending}>
+              {commentMutation.isPending ? "Adding..." : "Add Comment"}
+            </button>
           </form>
         </div>
 

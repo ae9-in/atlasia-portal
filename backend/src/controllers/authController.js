@@ -25,10 +25,10 @@ const sendAuthResponse = (res, user, statusCode) => {
 };
 
 const register = asyncHandler(async (req, res) => {
-  const { name, email, password, role = "STUDENT", businessId = null } = req.body;
+  const { name, email, password, role = "STUDENT", businessId = null, college } = req.body;
 
-  if (!name || !email || !password) {
-    throw new AppError("Name, email, and password are required", StatusCodes.BAD_REQUEST);
+  if (!name || !email || !password || !college) {
+    throw new AppError("Name, email, password, and college are required", StatusCodes.BAD_REQUEST);
   }
 
   if (normalizeRole(role) !== "STUDENT") {
@@ -42,7 +42,7 @@ const register = asyncHandler(async (req, res) => {
     throw new AppError("Email is already registered", StatusCodes.CONFLICT);
   }
 
-  const user = await User.create({ name, email: normalizedEmail, password, role: "STUDENT", businessId });
+  const user = await User.create({ name, email: normalizedEmail, password, role: "STUDENT", businessId, college });
   sendAuthResponse(res, user, StatusCodes.CREATED);
 });
 

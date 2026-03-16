@@ -78,6 +78,10 @@ export const atlasiaService = {
     const { data } = await api.post("/api/admin/users", payload);
     return data;
   },
+  async assignStudentBusiness(id, businessId) {
+    const { data } = await api.patch(`/api/admin/users/${id}/business`, { businessId });
+    return data;
+  },
   async getCoordinatorOverview() {
     const { data } = await api.get("/api/admin/coordinator-overview");
     return data;

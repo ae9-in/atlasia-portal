@@ -41,6 +41,11 @@ const userSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true
+    },
+    college: {
+      type: String,
+      enum: ["City College", "BMS College", "GIMS College", "St Pheleomena"],
+      required: false // Or true depending on if it's strictly required, the prompt implies "another column to select their college". We'll make it required if the role is STUDENT, but since it's a general user schema, let's keep it optional globally and validate in the controller.
     }
   },
   { timestamps: true }

@@ -1,26 +1,83 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, BriefcaseBusiness, ClipboardCheck, FileArchive, Users } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, BarChart, Bar } from "recharts";
 import LoadingScreen from "../components/LoadingScreen";
 import StatCard from "../components/StatCard";
+import DataTable from "../components/DataTable";
 import { atlasiaService } from "../services/atlasiaService";
 import { useAuth } from "../store/AuthContext";
 import { normalizeRole } from "../utils/roles";
+import { formatDate } from "../utils/format";
 
 const DashboardPage = () => {
   const { user } = useAuth();
   const role = normalizeRole(user?.role);
+  const [selectedBusinessId, setSelectedBusinessId] = useState("");
 
-  const tasksQuery = useQuery({ queryKey: ["dashboard-tasks"], queryFn: atlasiaService.getMyTasks });
+  const tasksQuery = useQuery({ queryKey: ["dashboard-tasks", role], queryFn: role === "STUDENT" ? atlasiaService.getMyTasks : atlasiaService.getAllTasks });
+  const businessesQuery = useQuery({ queryKey: ["businesses"], queryFn: atlasiaService.getBusinesses, enabled: role !== "STUDENT" });
   const reportsQuery = useQuery({ queryKey: ["student-reports"], queryFn: atlasiaService.getStudentReports, enabled: role === "STUDENT" });
   const coordinatorOverview = useQuery({ queryKey: ["coord-overview"], queryFn: atlasiaService.getCoordinatorOverview, enabled: role === "COORDINATOR" });
   const superOverview = useQuery({ queryKey: ["super-overview"], queryFn: atlasiaService.getSuperOverview, enabled: role === "SUPER_ADMIN" });
 
-  if (tasksQuery.isLoading || coordinatorOverview.isLoading || superOverview.isLoading) {
+  if (tasksQuery.isLoading || coordinatorOverview.isLoading || superOverview.isLoading || (role !== "STUDENT" && businessesQuery.isLoading)) {
     return <LoadingScreen />;
   }
 
   const myTasks = tasksQuery.data?.tasks || [];
+  const businesses = businessesQuery.data?.businesses || [];
+
+  const filteredTasks = role === "STUDENT" 
+    ? myTasks 
+    : myTasks.filter(task => !selectedBusinessId || task.businessId?._id === selectedBusinessId);
+
+  const renderTasksTable = () => (
+    <div className="mt-12 glass-panel p-6">
+      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Recent Tasks Overview</h2>
+          <p className="mt-1 text-sm text-slate-400">View tasks and assigned students.</p>
+        </div>
+        {role !== "STUDENT" && (
+          <select 
+            className="rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white max-w-xs" 
+            value={selectedBusinessId}
+            onChange={(e) => setSelectedBusinessId(e.target.value)}
+          >
+            <option value="">All Businesses</option>
+            {businesses.map((business) => (
+              <option key={business._id} value={business._id}>{business.name}</option>
+            ))}
+          </select>
+        )}
+      </div>
+      <DataTable
+        columns={[
+          { key: "title", label: "Title" },
+          ...(role !== "STUDENT" ? [{ key: "student", label: "Assigned To", render: (row) => row.assignedTo?.name || "-" }] : []),
+          { key: "business", label: "Business", render: (row) => {
+            const name = row.businessId?.name;
+            if (!name) return "-";
+            const colors = ["bg-rose-500", "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+              hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const colorClass = colors[Math.abs(hash) % colors.length];
+            return <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold text-white/90 ${colorClass}`}>{name}</span>;
+          } },
+          { key: "sprint", label: "Sprint", render: (row) => row.sprintId?.name || "-" },
+          { key: "deadline", label: "Deadline", render: (row) => formatDate(row.deadlineDate) },
+          { key: "status", label: "Status", render: (row) => (
+            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">{row.status}</span>
+          ) },
+        ]}
+        rows={filteredTasks}
+        emptyText="No tasks match the selected criteria."
+      />
+    </div>
+  );
 
   if (role === "STUDENT") {
     const reports = reportsQuery.data?.reports || [];
@@ -57,6 +114,7 @@ const DashboardPage = () => {
           <StatCard label="Reports Submitted" value={stats.reportsSubmitted || 0} hint="Reports visible to coordinators." icon={FileArchive} />
           <StatCard label="Pending Reports" value={stats.pendingReports || 0} hint="Assigned work still awaiting upload." icon={Activity} />
         </div>
+        {renderTasksTable()}
       </div>
     );
   }
@@ -106,6 +164,7 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
+      {renderTasksTable()}
     </div>
   );
 };

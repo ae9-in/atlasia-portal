@@ -6,6 +6,19 @@ const ReportSubmission = require("../models/ReportSubmission");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 
+const validateBusiness = async (businessId) => {
+  if (!businessId) {
+    return null;
+  }
+
+  const business = await Business.findById(businessId);
+  if (!business) {
+    throw new AppError("Business not found", StatusCodes.NOT_FOUND);
+  }
+
+  return business;
+};
+
 const createUser = asyncHandler(async (req, res) => {
   const { name, email, password, role, businessId = null } = req.body;
 
@@ -17,13 +30,15 @@ const createUser = asyncHandler(async (req, res) => {
     throw new AppError("Invalid role", StatusCodes.BAD_REQUEST);
   }
 
-  if (req.user.role === "COORDINATOR" && role !== "STUDENT") {
-    throw new AppError("Coordinators can only create students", StatusCodes.FORBIDDEN);
+  if (req.user.role !== "SUPER_ADMIN") {
+    throw new AppError("Only super admins can create users", StatusCodes.FORBIDDEN);
   }
 
   if (role === "STUDENT" && !businessId) {
     throw new AppError("Students must be assigned to a business", StatusCodes.BAD_REQUEST);
   }
+
+  await validateBusiness(role === "STUDENT" ? businessId : null);
 
   const normalizedEmail = email.toLowerCase();
   const existingUser = await User.findOne({ email: normalizedEmail });
@@ -37,19 +52,44 @@ const createUser = asyncHandler(async (req, res) => {
 
 const getUsers = asyncHandler(async (req, res) => {
   const query = {};
-  if (req.query.role) {
+  if (req.user.role === "COORDINATOR") {
+    query.role = "STUDENT";
+  } else if (req.query.role) {
     query.role = req.query.role;
   }
+
   const users = await User.find(query).select("-password").populate("businessId", "name description").sort({ createdAt: -1 });
   res.status(StatusCodes.OK).json({ users });
+});
+
+const assignStudentBusiness = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { businessId } = req.body;
+
+  if (!businessId) {
+    throw new AppError("Business is required", StatusCodes.BAD_REQUEST);
+  }
+
+  await validateBusiness(businessId);
+
+  const student = await User.findOne({ _id: id, role: "STUDENT" });
+  if (!student) {
+    throw new AppError("Student not found", StatusCodes.NOT_FOUND);
+  }
+
+  student.businessId = businessId;
+  await student.save();
+
+  const updatedStudent = await User.findById(student._id).select("-password").populate("businessId", "name description");
+  res.status(StatusCodes.OK).json({ message: "Student business assigned", user: updatedStudent });
 });
 
 const getCoordinatorOverview = asyncHandler(async (req, res) => {
   const [totalStudents, tasksCreated, reportsSubmitted, pendingReports] = await Promise.all([
     User.countDocuments({ role: "STUDENT" }),
-    Task.countDocuments({ createdBy: req.user._id }),
+    Task.countDocuments({}),
     ReportSubmission.countDocuments(),
-    Task.countDocuments({ createdBy: req.user._id, status: { $in: ["ASSIGNED", "IN_PROGRESS"] } })
+    Task.countDocuments({ status: { $in: ["ASSIGNED", "IN_PROGRESS"] } })
   ]);
 
   res.status(StatusCodes.OK).json({
@@ -106,6 +146,7 @@ const getSuperAdminOverview = asyncHandler(async (_req, res) => {
 module.exports = {
   createUser,
   getUsers,
+  assignStudentBusiness,
   getCoordinatorOverview,
   getSuperAdminOverview
 };

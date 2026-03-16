@@ -1,9 +1,12 @@
+const fs = require("fs");
 const { StatusCodes } = require("http-status-codes");
 const Business = require("../models/Business");
 const User = require("../models/User");
 const Task = require("../models/Task");
+const ReportSubmission = require("../models/ReportSubmission");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
+const { taskFilesRoot } = require("../utils/paths");
 
 const createBusiness = asyncHandler(async (req, res) => {
   const { name, description } = req.body;
@@ -28,28 +31,23 @@ const deleteBusiness = asyncHandler(async (req, res) => {
     throw new AppError("Business not found", StatusCodes.NOT_FOUND);
   }
 
-  const [studentsUsingBusiness, tasksUsingBusiness] = await Promise.all([
-    User.countDocuments({ businessId: business._id, role: "STUDENT", isActive: true }),
-    Task.countDocuments({ businessId: business._id })
-  ]);
+  // Unassign students linked to this business
+  await User.updateMany(
+    { businessId: business._id, role: "STUDENT" },
+    { $unset: { businessId: 1 } }
+  );
 
-  if (studentsUsingBusiness > 0 || tasksUsingBusiness > 0) {
-    const reasons = [];
-
-    if (studentsUsingBusiness > 0) {
-      reasons.push(`${studentsUsingBusiness} active student${studentsUsingBusiness === 1 ? "" : "s"}`);
+  // Find all tasks related to the business and delete them along with their attachments and submissions
+  const tasks = await Task.find({ businessId: business._id });
+  for (const task of tasks) {
+    for (const attachment of task.attachments || []) {
+      fs.unlink(`${taskFilesRoot}\\${attachment}`, () => {});
     }
-
-    if (tasksUsingBusiness > 0) {
-      reasons.push(`${tasksUsingBusiness} task${tasksUsingBusiness === 1 ? "" : "s"}`);
-    }
-
-    throw new AppError(
-      `Cannot delete this business because it is still linked to ${reasons.join(" and ")}`,
-      StatusCodes.CONFLICT
-    );
+    await ReportSubmission.deleteMany({ taskId: task._id });
+    await Task.findByIdAndDelete(task._id);
   }
 
+  // Delete the business itself
   await Business.findByIdAndDelete(req.params.id);
 
   res.status(StatusCodes.OK).json({ message: "Business deleted successfully" });

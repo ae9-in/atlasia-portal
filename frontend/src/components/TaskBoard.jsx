@@ -28,7 +28,7 @@ const TaskBoard = ({ tasks }) => (
                 <p className="font-semibold text-white">{task.title}</p>
                 <p className="mt-2 text-sm text-slate-300">{task.description}</p>
                 <p className="mt-3 text-xs uppercase tracking-[0.2em] text-slate-500">
-                  Deadline {formatDate(task.deadline)}
+                  Deadline {formatDate(task.deadlineDate)}
                 </p>
               </div>
             </div>

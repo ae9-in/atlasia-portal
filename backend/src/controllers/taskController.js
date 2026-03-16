@@ -12,10 +12,6 @@ const buildTaskQuery = (user) => {
     return { assignedTo: user._id };
   }
 
-  if (user.role === "COORDINATOR") {
-    return { createdBy: user._id };
-  }
-
   return {};
 };
 
@@ -106,6 +102,7 @@ const addComment = asyncHandler(async (req, res) => {
 
   const canComment =
     req.user.role === "SUPER_ADMIN" ||
+    req.user.role === "COORDINATOR" ||
     String(task.assignedTo) === String(req.user._id) ||
     String(task.createdBy) === String(req.user._id);
 
@@ -126,7 +123,7 @@ const deleteTask = asyncHandler(async (req, res) => {
     throw new AppError("Task not found", StatusCodes.NOT_FOUND);
   }
 
-  if (req.user.role !== "SUPER_ADMIN" && String(task.createdBy) !== String(req.user._id)) {
+  if (req.user.role !== "SUPER_ADMIN" && req.user.role !== "COORDINATOR" && String(task.createdBy) !== String(req.user._id)) {
     throw new AppError("Access denied", StatusCodes.FORBIDDEN);
   }
 

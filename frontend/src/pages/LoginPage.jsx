@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../store/AuthContext";
 
 const LoginPage = () => {
@@ -9,6 +11,7 @@ const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm();
+  const [showPassword, setShowPassword] = useState(false);
 
   if (isAuthReady && user) {
     return <Navigate to="/workspace" replace />;
@@ -30,7 +33,12 @@ const LoginPage = () => {
           {errors.email ? <p className="mt-2 text-sm text-rose-300">{errors.email.message}</p> : null}
         </div>
         <div>
-          <input type="password" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white" placeholder="Password" {...register("password", { required: "Password is required" })} />
+          <div className="relative">
+            <input type={showPassword ? "text" : "password"} className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 pr-12 text-white" placeholder="Password" {...register("password", { required: "Password is required" })} />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors flex items-center justify-center">
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
           {errors.password ? <p className="mt-2 text-sm text-rose-300">{errors.password.message}</p> : null}
         </div>
         <button type="submit" disabled={isSubmitting} className="w-full rounded-2xl bg-gradient-to-r from-brand-primary to-brand-secondary px-4 py-3 font-semibold text-white">

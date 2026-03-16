@@ -71,6 +71,7 @@ const downloadReport = asyncHandler(async (req, res) => {
 
   const canAccess =
     req.user.role === "SUPER_ADMIN" ||
+    req.user.role === "COORDINATOR" ||
     String(submission.studentId) === String(req.user._id) ||
     String(submission.taskId.createdBy) === String(req.user._id);
 
