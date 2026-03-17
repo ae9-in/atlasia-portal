@@ -84,10 +84,18 @@ const login = asyncHandler(async (req, res) => {
 });
 
 const me = asyncHandler(async (req, res) => {
+  const normalizedRole = normalizeRole(req.user.role);
+  const token = signToken({ id: req.user._id, role: normalizedRole });
+
   res.status(StatusCodes.OK).json({
+    token,
     user: {
-      ...req.user.toObject(),
-      role: normalizeRole(req.user.role)
+      id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      role: normalizedRole,
+      businessId: req.user.businessId,
+      isActive: req.user.isActive
     },
     appName: "Atlasia Workbook"
   });

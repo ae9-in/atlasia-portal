@@ -10,6 +10,9 @@ export const AuthProvider = ({ children }) => {
   const initialize = async () => {
     try {
       const response = await authService.me();
+      if (response.token) {
+        localStorage.setItem("atlasia_token", response.token);
+      }
       setUser(response.user);
     } catch {
       setUser(null);
