@@ -24,6 +24,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (payload) => {
     const response = await authService.login(payload);
+    if (response.token) {
+      localStorage.setItem("atlasia_token", response.token);
+    }
     setUser(response.user);
     setIsAuthReady(true);
     return response.user;
@@ -31,12 +34,16 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (payload) => {
     const response = await authService.register(payload);
+    if (response.token) {
+      localStorage.setItem("atlasia_token", response.token);
+    }
     setUser(response.user);
     setIsAuthReady(true);
     return response.user;
   };
 
   const logout = async () => {
+    localStorage.removeItem("atlasia_token");
     await authService.logout();
     setUser(null);
     setIsAuthReady(true);
