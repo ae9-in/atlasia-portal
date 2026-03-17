@@ -46,6 +46,14 @@ app.use(morgan(env.nodeEnv === "production" ? "combined" : "dev"));
 
 app.use("/uploads", express.static(uploadsRoot));
 
+app.get("/", (req, res) => {
+  res.status(StatusCodes.OK).json({ 
+    message: "Atlasia Workbook API is running smoothly",
+    environment: env.nodeEnv,
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get("/api/health", (_req, res) => {
   res.status(StatusCodes.OK).json({ status: "ok", appName: env.atlasiaName });
 });
