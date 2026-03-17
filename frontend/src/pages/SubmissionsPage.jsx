@@ -10,6 +10,8 @@ const SubmissionsPage = () => {
     queryFn: () => atlasiaService.getTaskReports()
   });
 
+  const token = localStorage.getItem("atlasia_token");
+
   if (reportsQuery.isLoading) {
     return <LoadingScreen />;
   }
@@ -84,7 +86,7 @@ const SubmissionsPage = () => {
             render: (row) => (
               <div className="flex gap-2">
                 <a
-                  href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${row._id}?view=true`}
+                  href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${row._id}?view=true&token=${localStorage.getItem("atlasia_token")}`}
                   target="_blank"
                   rel="noreferrer"
                   className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-brand-secondary transition hover:bg-white/10"
@@ -92,7 +94,7 @@ const SubmissionsPage = () => {
                   View Report
                 </a>
                 <a
-                  href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${row._id}`}
+                  href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${row._id}?token=${localStorage.getItem("atlasia_token")}`}
                   className="rounded-xl border border-rose-500/10 bg-rose-500/5 px-4 py-2 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/10"
                 >
                   Download

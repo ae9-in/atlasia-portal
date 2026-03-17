@@ -14,6 +14,7 @@ import { formatDate, formatTime } from "../utils/format";
 
 const AdminDashboardPage = () => {
   const queryClient = useQueryClient();
+  const token = localStorage.getItem("atlasia_token");
   const [search, setSearch] = useState("");
   const { register, handleSubmit, reset } = useForm();
 
@@ -148,7 +149,7 @@ const AdminDashboardPage = () => {
             {
               key: "reportFile",
               label: "Report",
-              render: (row) => row.reportFile ? <a href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${row.reportFile}`} className="text-brand-secondary">Download</a> : "Pending"
+              render: (row) => row.reportFile ? <a href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${row.reportId || row.reportFile}?token=${localStorage.getItem("atlasia_token")}`} target="_blank" rel="noreferrer" className="text-brand-secondary">Download</a> : "Pending"
             }
           ]}
           rows={filteredTracker}

@@ -68,7 +68,16 @@ const getTaskReports = asyncHandler(async (req, res) => {
 });
 
 const downloadReport = asyncHandler(async (req, res) => {
-  const submission = await ReportSubmission.findById(req.params.id).populate("taskId", "assignedTo createdBy");
+  const { id } = req.params;
+  
+  // Try to find by ID first, then by filename
+  const isId = mongoose.Types.ObjectId.isValid(id);
+  const submission = await ReportSubmission.findOne({
+    $or: [
+      ...(isId ? [{ _id: id }] : []),
+      { reportFile: id }
+    ]
+  }).populate("taskId", "assignedTo createdBy");
 
   if (!submission) {
     throw new AppError("Report not found", StatusCodes.NOT_FOUND);

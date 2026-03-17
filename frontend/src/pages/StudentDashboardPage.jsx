@@ -13,6 +13,7 @@ import { formatDate } from "../utils/format";
 
 const StudentDashboardPage = () => {
   const queryClient = useQueryClient();
+  const token = localStorage.getItem("atlasia_token");
   const lastSelectedRef = useRef(null);
   const reportsQuery = useQuery({ queryKey: ["student-reports"], queryFn: reportService.getMyReports });
   const tasksQuery = useQuery({ queryKey: ["tasks"], queryFn: taskService.getTasks });
@@ -88,10 +89,10 @@ const StudentDashboardPage = () => {
                   label: "Download",
                   render: (row) => (
                     <div className="flex gap-3">
-                      <a href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${row._id}?view=true`} target="_blank" rel="noreferrer" className="text-brand-secondary">
+                      <a href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${row._id}?view=true&token=${localStorage.getItem("atlasia_token")}`} target="_blank" rel="noreferrer" className="text-brand-secondary">
                         View
                       </a>
-                      <a href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${row._id}`} className="text-slate-400">
+                      <a href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${row._id}?token=${localStorage.getItem("atlasia_token")}`} className="text-slate-400">
                         Download
                       </a>
                     </div>

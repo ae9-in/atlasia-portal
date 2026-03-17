@@ -10,7 +10,7 @@ const verifyToken = asyncHandler(async (req, _res, next) => {
   const headerToken = req.headers.authorization?.startsWith("Bearer ")
     ? req.headers.authorization.split(" ")[1]
     : null;
-  const token = req.cookies.token || headerToken;
+  const token = req.query.token || req.cookies.token || headerToken;
 
   if (!token) {
     throw new AppError("Authentication required", StatusCodes.UNAUTHORIZED);

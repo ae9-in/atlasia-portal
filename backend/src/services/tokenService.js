@@ -5,7 +5,7 @@ const signToken = (payload) => jwt.sign(payload, env.jwtSecret, { expiresIn: env
 
 const buildCookieOptions = () => ({
   httpOnly: true,
-  sameSite: "lax",
+  sameSite: env.nodeEnv === "production" ? "none" : "lax",
   secure: env.nodeEnv === "production",
   maxAge: 7 * 24 * 60 * 60 * 1000
 });

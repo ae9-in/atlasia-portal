@@ -12,6 +12,7 @@ import { formatDate } from "../utils/format";
 
 const TasksPage = () => {
   const { user } = useAuth();
+  const token = localStorage.getItem("atlasia_token");
   const role = normalizeRole(user?.role);
   const queryClient = useQueryClient();
   const [selectedTaskId, setSelectedTaskId] = useState(null);
@@ -347,11 +348,19 @@ const TasksPage = () => {
                 <div key={report._id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <p className="font-semibold text-white">{report.studentId?.name}</p>
                   <p className="mt-2 text-sm text-slate-300">{report.taskId?.title}</p>
-                  <div className="mt-3 flex gap-3">
-                    <a className="text-brand-secondary" target="_blank" rel="noreferrer" href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${report._id}?view=true`}>
+                  <div className="mt-3 flex gap-3 text-xs">
+                    <a 
+                      className="text-brand-secondary hover:underline transition" 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${report._id}?view=true&token=${localStorage.getItem("atlasia_token")}`}
+                    >
                       View
                     </a>
-                    <a className="text-slate-400" href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${report._id}`}>
+                    <a 
+                      className="text-slate-400 hover:text-white transition" 
+                      href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${report._id}?token=${localStorage.getItem("atlasia_token")}`}
+                    >
                       Download
                     </a>
                   </div>
