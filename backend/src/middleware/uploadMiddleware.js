@@ -11,7 +11,7 @@ const reportStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "atlasia-reports",
-    allowed_formats: ["pdf", "zip", "docx"],
+    allowed_formats: ["pdf", "zip", "docx", "doc", "csv", "xlsx", "xls", "rar", "7z", "txt", "jpg", "jpeg", "png"],
     resource_type: "raw", // CRITICAL: needed for non-image files like PDF/ZIP/DOCX
     public_id: (req, file) => {
       const sanitizedName = file.originalname.replace(/\s+/g, "_").split(".")[0];
