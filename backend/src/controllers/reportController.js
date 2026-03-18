@@ -1,13 +1,12 @@
 const mongoose = require("mongoose");
-const fs = require("fs");
 const path = require("path");
 const { StatusCodes } = require("http-status-codes");
 const ReportSubmission = require("../models/ReportSubmission");
 const Task = require("../models/Task");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
-const { reportFilesRoot } = require("../utils/paths");
 const { logActivity } = require("../services/logService");
+const cloudinary = require("../config/cloudinary");
 
 const uploadReport = asyncHandler(async (req, res) => {
   const taskId = req.params.taskId || req.body.taskId;
@@ -18,25 +17,38 @@ const uploadReport = asyncHandler(async (req, res) => {
 
   const task = await Task.findById(taskId);
   if (!task) {
-    fs.unlink(req.file.path, () => {});
+    // Attempt to delete from Cloudinary if task not found
+    if (req.file.filename) {
+      await cloudinary.uploader.destroy(req.file.filename, { resource_type: "raw" });
+    }
     throw new AppError("Task not found", StatusCodes.NOT_FOUND);
   }
 
   if (String(task.assignedTo) !== String(req.user._id)) {
-    fs.unlink(req.file.path, () => {});
+    if (req.file.filename) {
+      await cloudinary.uploader.destroy(req.file.filename, { resource_type: "raw" });
+    }
     throw new AppError("You can only submit reports for your assigned tasks", StatusCodes.FORBIDDEN);
   }
 
   const submissionCount = await ReportSubmission.countDocuments({ studentId: req.user._id, taskId });
   if (submissionCount >= 3) {
-    fs.unlink(req.file.path, () => {});
+    if (req.file.filename) {
+      await cloudinary.uploader.destroy(req.file.filename, { resource_type: "raw" });
+    }
     throw new AppError("Maximum of 3 reports allowed per task.", StatusCodes.CONFLICT);
   }
 
+  // req.file.path is the secure_url, req.file.filename is the public_id
   const submission = await ReportSubmission.create({
     studentId: req.user._id,
     taskId,
-    reportFile: req.file.filename,
+    cloudinaryUrl: req.file.path,
+    cloudinaryPublicId: req.file.filename,
+    originalFileName: req.file.originalname,
+    fileFormat: path.extname(req.file.originalname).replace(".", "").toLowerCase(),
+    fileSize: req.file.size,
+    reportFile: req.file.filename, // Keep for backward compatibility
     status: "SUBMITTED"
   });
 
@@ -71,11 +83,11 @@ const getTaskReports = asyncHandler(async (req, res) => {
 const downloadReport = asyncHandler(async (req, res) => {
   const { id } = req.params;
   
-  // Try to find by ID first, then by filename
   const isId = mongoose.Types.ObjectId.isValid(id);
   const submission = await ReportSubmission.findOne({
     $or: [
       ...(isId ? [{ _id: id }] : []),
+      { cloudinaryPublicId: id },
       { reportFile: id }
     ]
   }).populate("taskId", "assignedTo createdBy");
@@ -104,27 +116,23 @@ const downloadReport = asyncHandler(async (req, res) => {
     });
   }
 
+  // Redirect to Cloudinary URL for cloud-stored files
+  if (submission.cloudinaryUrl) {
+    return res.redirect(301, submission.cloudinaryUrl);
+  }
+
+  // Fallback for older local files (will likely fail on Render if redeployed)
+  const { reportFilesRoot } = require("../utils/paths");
+  const fs = require("fs");
   const filePath = path.resolve(reportFilesRoot, submission.reportFile);
+  
   if (!fs.existsSync(filePath)) {
-    console.error(`Report file not found at: ${filePath}`);
-    throw new AppError("Report file not found on server storage.", StatusCodes.NOT_FOUND);
+    throw new AppError("Local report file not found. It may have been cleared by server restart.", StatusCodes.NOT_FOUND);
   }
 
   if (req.query.view === "true") {
-    const ext = path.extname(filePath).toLowerCase();
-    const codeExtensions = ['.js', '.jsx', '.ts', '.tsx', '.py', '.java', '.c', '.cpp', '.h', '.html', '.css', '.json', '.txt', '.md'];
-    
-    const headers = {
-      "Content-Disposition": "inline"
-    };
-
-    if (codeExtensions.includes(ext)) {
-      headers["Content-Type"] = "text/plain";
-    }
-
-    return res.sendFile(filePath, { headers });
+      return res.sendFile(filePath, { headers: { "Content-Disposition": "inline" } });
   }
-
   return res.download(filePath);
 });
 
