@@ -17,7 +17,7 @@ const uploadReport = asyncHandler(async (req, res) => {
 
   const task = await Task.findById(taskId);
   if (!task) {
-    // Attempt to delete from Cloudinary if task not found
+    // Cleanup Cloudinary file if task doesn't exist
     if (req.file.filename) {
       await cloudinary.uploader.destroy(req.file.filename, { resource_type: "raw" });
     }
@@ -39,7 +39,8 @@ const uploadReport = asyncHandler(async (req, res) => {
     throw new AppError("Maximum of 3 reports allowed per task.", StatusCodes.CONFLICT);
   }
 
-  // req.file.path is the secure_url, req.file.filename is the public_id
+  // req.file.path is the Cloudinary secure_url
+  // req.file.filename is the Cloudinary public_id
   const submission = await ReportSubmission.create({
     studentId: req.user._id,
     taskId,
@@ -47,15 +48,19 @@ const uploadReport = asyncHandler(async (req, res) => {
     cloudinaryPublicId: req.file.filename,
     originalFileName: req.file.originalname,
     fileFormat: path.extname(req.file.originalname).replace(".", "").toLowerCase(),
-    fileSize: req.file.size,
-    reportFile: req.file.filename, // Keep for backward compatibility
+    fileSize: req.file.size || 0,
+    // Maintaining reportFile for legacy compatibility with frontend keys
+    reportFile: req.file.filename, 
     status: "SUBMITTED"
   });
 
   task.status = "SUBMITTED";
   await task.save();
 
-  res.status(StatusCodes.CREATED).json({ message: "Report uploaded successfully", submission });
+  res.status(StatusCodes.CREATED).json({ 
+    message: "Report uploaded successfully", 
+    submission 
+  });
 });
 
 const getStudentReports = asyncHandler(async (req, res) => {
@@ -116,18 +121,18 @@ const downloadReport = asyncHandler(async (req, res) => {
     });
   }
 
-  // Redirect to Cloudinary URL for cloud-stored files
+  // Redirect to Cloudinary URL — NO local disk needed
   if (submission.cloudinaryUrl) {
     return res.redirect(301, submission.cloudinaryUrl);
   }
 
-  // Fallback for older local files (will likely fail on Render if redeployed)
+  // Legacy fallback for local files (only works if they still exist on disk)
   const { reportFilesRoot } = require("../utils/paths");
   const fs = require("fs");
   const filePath = path.resolve(reportFilesRoot, submission.reportFile);
   
   if (!fs.existsSync(filePath)) {
-    throw new AppError("Local report file not found. It may have been cleared by server restart.", StatusCodes.NOT_FOUND);
+    throw new AppError("File not found on cloud or server storage.", StatusCodes.NOT_FOUND);
   }
 
   if (req.query.view === "true") {
