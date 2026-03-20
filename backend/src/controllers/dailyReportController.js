@@ -164,18 +164,19 @@ const downloadDailyReport = asyncHandler(async (req, res) => {
 
   const https = require("https");
   const http = require("http");
+  const urlModule = require("url");
   const originalName = report.originalFileName || report.reportFile || "Daily_Report";
   const safeName = originalName.replace(/["\\]/g, "_");
 
-  const streamFromCloudinary = (url) => {
-    const protocol = url.startsWith("https") ? https : http;
-    protocol.get(url, (cloudinaryRes) => {
+  const streamFromCloudinary = (targetUrl) => {
+    const protocol = targetUrl.startsWith("https") ? https : http;
+    protocol.get(targetUrl, (cloudinaryRes) => {
       // Handle Redirects
       if (cloudinaryRes.statusCode >= 300 && cloudinaryRes.statusCode < 400 && cloudinaryRes.headers.location) {
-        return streamFromCloudinary(cloudinaryRes.headers.location);
+        const nextUrl = urlModule.resolve(targetUrl, cloudinaryRes.headers.location);
+        return streamFromCloudinary(nextUrl);
       }
 
-      // Detect MIME type
       let contentType = cloudinaryRes.headers["content-type"];
       const ext = originalName.split(".").pop().toLowerCase();
       const mimeTypes = {
@@ -189,11 +190,9 @@ const downloadDailyReport = asyncHandler(async (req, res) => {
       };
       if (mimeTypes[ext]) contentType = mimeTypes[ext];
 
-      // Forward headers
       if (contentType) res.set("Content-Type", contentType);
-      if (cloudinaryRes.headers["content-length"]) res.set("Content-Length", cloudinaryRes.headers["content-length"]);
       if (cloudinaryRes.headers["content-encoding"]) res.set("Content-Encoding", cloudinaryRes.headers["content-encoding"]);
-      
+
       res.set("Content-Disposition", `${isView ? "inline" : "attachment"}; filename="${safeName}"`);
       
       cloudinaryRes.pipe(res);
