@@ -161,18 +161,17 @@ const downloadDailyReport = asyncHandler(async (req, res) => {
     });
   }
 
-  let finalUrl = report.cloudinaryUrl;
-  const originalName = report.originalFileName || report.reportFile || "Daily_Report";
-  const safeName = encodeURIComponent(originalName.replace(/[,/]/g, "_"));
+  const cloudinaryUrl = report.cloudinaryUrl;
 
   if (isView) {
+    // Attempt inline viewing for supported types; default Cloudinary URLs handle this best
     if (["pdf", "png", "jpg", "jpeg", "webp"].includes(report.fileFormat)) {
-      return res.redirect(302, finalUrl);
+      return res.redirect(302, cloudinaryUrl);
     }
   }
 
-  // Force download with the original filename for all other cases
-  const downloadUrl = finalUrl.replace("/upload/", `/upload/fl_attachment:${safeName}/`);
+  // Force download using the standard attachment flag (without custom filename extension to avoid URL errors)
+  const downloadUrl = cloudinaryUrl.replace("/upload/", "/upload/fl_attachment/");
   res.redirect(302, downloadUrl);
 });
 

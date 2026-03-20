@@ -126,16 +126,13 @@ const downloadReport = asyncHandler(async (req, res) => {
     const isView = req.query.view === "true";
     const cloudinaryUrl = submission.cloudinaryUrl;
 
-    const originalName = submission.originalFileName || submission.reportFile || "Task_Report";
-    const safeName = encodeURIComponent(originalName.replace(/[,/]/g, "_"));
-
     if (isView) {
         if (["pdf", "png", "jpg", "jpeg", "webp"].includes(submission.fileFormat)) {
             return res.redirect(302, cloudinaryUrl);
         }
     }
 
-    const downloadUrl = cloudinaryUrl.replace("/upload/", `/upload/fl_attachment:${safeName}/`);
+    const downloadUrl = cloudinaryUrl.replace("/upload/", "/upload/fl_attachment/");
     return res.redirect(302, downloadUrl);
   }
 
