@@ -97,6 +97,17 @@ backend/.env.local
 frontend/.env
 frontend/.env.local
 
+# Sensitive backend scripts and logs
+backend/*.js
+!backend/server.js
+backend/*.txt
+backend/src/scripts/*.js
+!backend/src/scripts/seedAdmins.js
+!backend/src/scripts/seedSampleUsers.js
+!backend/src/scripts/removeDummyStudents.js
+!backend/src/scripts/removeAllStudents.js
+!backend/src/scripts/deleteSpecificStudents.js
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
