@@ -154,11 +154,16 @@ const downloadReport = asyncHandler(async (req, res) => {
             };
             if (mimeTypes[ext]) contentType = mimeTypes[ext];
 
-            if (contentType) res.set("Content-Type", contentType);
-            if (cloudinaryRes.headers["content-encoding"]) res.set("Content-Encoding", cloudinaryRes.headers["content-encoding"]);
-
-            res.set("Content-Disposition", `${isView ? "inline" : "attachment"}; filename="${safeName}"`);
+            const headers = {
+                "Content-Type": contentType || "application/octet-stream",
+                "Content-Disposition": `${isView ? "inline" : "attachment"}; filename="${safeName}"`
+            };
             
+            if (cloudinaryRes.headers["content-encoding"]) {
+                headers["Content-Encoding"] = cloudinaryRes.headers["content-encoding"];
+            }
+
+            res.writeHead(200, headers);
             cloudinaryRes.pipe(res);
         }).on("error", (err) => {
             console.error("Cloudinary Stream Error:", err);
