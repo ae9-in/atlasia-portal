@@ -124,54 +124,21 @@ const downloadReport = asyncHandler(async (req, res) => {
 
   // Redirect to Cloudinary URL — NO local disk needed
   if (submission.cloudinaryUrl) {
-    const isView = req.query.view === "true";
-    const https = require("https");
-    const http = require("http");
-    const urlModule = require("url");
-    const originalName = submission.originalFileName || submission.reportFile || "Task_Report";
-    const safeName = originalName.replace(/["\\]/g, "_");
+    let cloudinaryUrl = submission.cloudinaryUrl;
+    const isPdf = submission.fileFormat === "pdf" || (submission.originalFileName && submission.originalFileName.toLowerCase().endsWith(".pdf"));
 
-    const streamFromCloudinary = (targetUrl) => {
-        const protocol = targetUrl.startsWith("https") ? https : http;
-        
-        protocol.get(targetUrl, { headers: { "Accept-Encoding": "identity" } }, (cloudinaryRes) => {
-            // Handle Redirects
-            if (cloudinaryRes.statusCode >= 300 && cloudinaryRes.statusCode < 400 && cloudinaryRes.headers.location) {
-                const nextUrl = urlModule.resolve(targetUrl, cloudinaryRes.headers.location);
-                return streamFromCloudinary(nextUrl);
-            }
+    if (isView) {
+        if (isPdf && cloudinaryUrl.includes("/raw/upload/")) {
+            cloudinaryUrl = cloudinaryUrl.replace("/raw/upload/", "/image/upload/");
+        }
+        return res.redirect(302, cloudinaryUrl);
+    }
 
-            let contentType = cloudinaryRes.headers["content-type"];
-            const ext = originalName.split(".").pop().toLowerCase();
-            const mimeTypes = {
-                pdf: "application/pdf",
-                png: "image/png",
-                jpg: "image/jpeg",
-                jpeg: "image/jpeg",
-                webp: "image/webp",
-                docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                zip: "application/zip"
-            };
-            if (mimeTypes[ext]) contentType = mimeTypes[ext];
+    if (!cloudinaryUrl.includes("/raw/upload/")) {
+        cloudinaryUrl = cloudinaryUrl.replace("/upload/", "/upload/fl_attachment/");
+    }
 
-            const headers = {
-                "Content-Type": contentType || "application/octet-stream",
-                "Content-Disposition": `${isView ? "inline" : "attachment"}; filename="${safeName}"`
-            };
-            
-            if (cloudinaryRes.headers["content-encoding"]) {
-                headers["Content-Encoding"] = cloudinaryRes.headers["content-encoding"];
-            }
-
-            res.writeHead(200, headers);
-            cloudinaryRes.pipe(res);
-        }).on("error", (err) => {
-            console.error("Cloudinary Stream Error:", err);
-            if (!res.headersSent) res.status(500).send("Streaming Error");
-        });
-    };
-
-    streamFromCloudinary(submission.cloudinaryUrl);
+    return res.redirect(302, cloudinaryUrl);
     return;
   }
 
