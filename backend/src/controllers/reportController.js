@@ -125,24 +125,26 @@ const downloadReport = asyncHandler(async (req, res) => {
   // Redirect to Cloudinary URL — NO local disk needed
   if (submission.cloudinaryUrl) {
     const isView = req.query.view === "true";
-    const cloudinaryUrl = submission.cloudinaryUrl;
-    const resourceType = submission.resourceType || "raw";
+    const https = require("https");
+    const originalName = submission.originalFileName || submission.reportFile || "Task_Report";
+    const safeName = originalName.replace(/["\\]/g, "_");
 
-    if (isView) {
-        // Attempt inline viewing for images/videos/PDFs (anything not 'raw')
-        if (resourceType !== "raw" || ["pdf", "png", "jpg", "jpeg", "webp"].includes(submission.fileFormat)) {
-            return res.redirect(302, cloudinaryUrl);
+    https.get(submission.cloudinaryUrl, (cloudinaryRes) => {
+        let contentType = cloudinaryRes.headers["content-type"];
+        
+        if (originalName.toLowerCase().endsWith(".pdf")) {
+            contentType = "application/pdf";
         }
-    }
 
-    // Only images and videos reliably support the fl_attachment flag in the URL for this account's configuration
-    if (resourceType === "image" || resourceType === "video") {
-        const downloadUrl = cloudinaryUrl.replace("/upload/", "/upload/fl_attachment/");
-        return res.redirect(302, downloadUrl);
-    }
-
-    // For everything else (raw types), standard delivery is safest to avoid 401s
-    return res.redirect(302, cloudinaryUrl);
+        res.set("Content-Type", contentType);
+        res.set("Content-Disposition", `${isView ? "inline" : "attachment"}; filename="${safeName}"`);
+        
+        cloudinaryRes.pipe(res);
+    }).on("error", (err) => {
+        console.error("Cloudinary Proxy Error:", err);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Error retrieving file.");
+    });
+    return;
   }
 
   // Legacy fallback for local files (only works if they still exist on disk)

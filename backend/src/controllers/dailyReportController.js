@@ -162,24 +162,28 @@ const downloadDailyReport = asyncHandler(async (req, res) => {
     });
   }
 
-  const cloudinaryUrl = report.cloudinaryUrl;
-  const resourceType = report.resourceType || "raw";
+  const https = require("https");
+  const originalName = report.originalFileName || report.reportFile || "Daily_Report";
+  const safeName = originalName.replace(/["\\]/g, "_"); // Sanitize for Header
 
-  if (isView) {
-    // Attempt inline viewing for images/videos/PDFs (anything not 'raw' usually has right headers)
-    if (resourceType !== "raw" || ["pdf", "png", "jpg", "jpeg", "webp"].includes(report.fileFormat)) {
-      return res.redirect(302, cloudinaryUrl);
+  https.get(report.cloudinaryUrl, (cloudinaryRes) => {
+    // Forward relevant headers from Cloudinary
+    let contentType = cloudinaryRes.headers["content-type"];
+    
+    // Auto-fix MIME for PDFs that were uploaded as 'raw'
+    if (originalName.toLowerCase().endsWith(".pdf")) {
+      contentType = "application/pdf";
     }
-  }
+    
+    res.set("Content-Type", contentType);
+    res.set("Content-Disposition", `${isView ? "inline" : "attachment"}; filename="${safeName}"`);
 
-  // Only images and videos reliably support the fl_attachment flag in the URL for this setup
-  if (resourceType === "image" || resourceType === "video") {
-    const downloadUrl = cloudinaryUrl.replace("/upload/", "/upload/fl_attachment/");
-    return res.redirect(302, downloadUrl);
-  }
-
-  // For everything else (raw types), standard direct delivery is safest to avoid 401s
-  res.redirect(302, cloudinaryUrl);
+    // Stream the data from Cloudinary to the client
+    cloudinaryRes.pipe(res);
+  }).on("error", (err) => {
+    console.error("Cloudinary Proxy Error:", err);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Error retrieving file.");
+  });
 });
 
 /**
