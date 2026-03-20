@@ -129,21 +129,30 @@ const downloadReport = asyncHandler(async (req, res) => {
     const originalName = submission.originalFileName || submission.reportFile || "Task_Report";
     const safeName = originalName.replace(/["\\]/g, "_");
 
-    https.get(submission.cloudinaryUrl, (cloudinaryRes) => {
-        let contentType = cloudinaryRes.headers["content-type"];
-        
-        if (originalName.toLowerCase().endsWith(".pdf")) {
-            contentType = "application/pdf";
-        }
+    const streamFromCloudinary = (url) => {
+        https.get(url, (cloudinaryRes) => {
+            if (cloudinaryRes.statusCode >= 300 && cloudinaryRes.statusCode < 400 && cloudinaryRes.headers.location) {
+                return streamFromCloudinary(cloudinaryRes.headers.location);
+            }
 
-        res.set("Content-Type", contentType);
-        res.set("Content-Disposition", `${isView ? "inline" : "attachment"}; filename="${safeName}"`);
-        
-        cloudinaryRes.pipe(res);
-    }).on("error", (err) => {
-        console.error("Cloudinary Proxy Error:", err);
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Error retrieving file.");
-    });
+            let contentType = cloudinaryRes.headers["content-type"];
+            if (originalName.toLowerCase().endsWith(".pdf")) {
+                contentType = "application/pdf";
+            }
+
+            res.set("Content-Type", contentType);
+            res.set("Content-Disposition", `${isView ? "inline" : "attachment"}; filename="${safeName}"`);
+            
+            cloudinaryRes.pipe(res);
+        }).on("error", (err) => {
+            console.error("Cloudinary Stream Error:", err);
+            if (!res.headersSent) {
+                res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Error streaming file contents.");
+            }
+        });
+    };
+
+    streamFromCloudinary(submission.cloudinaryUrl);
     return;
   }
 
