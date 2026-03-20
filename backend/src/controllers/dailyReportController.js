@@ -163,31 +163,43 @@ const downloadDailyReport = asyncHandler(async (req, res) => {
   }
 
   const https = require("https");
+  const http = require("http");
   const originalName = report.originalFileName || report.reportFile || "Daily_Report";
   const safeName = originalName.replace(/["\\]/g, "_");
 
   const streamFromCloudinary = (url) => {
-    https.get(url, (cloudinaryRes) => {
-      // Handle Redirects (e.g., v302 or CDN switching)
+    const protocol = url.startsWith("https") ? https : http;
+    protocol.get(url, (cloudinaryRes) => {
+      // Handle Redirects
       if (cloudinaryRes.statusCode >= 300 && cloudinaryRes.statusCode < 400 && cloudinaryRes.headers.location) {
         return streamFromCloudinary(cloudinaryRes.headers.location);
       }
 
-      // If everything is OK, stream the file
+      // Detect MIME type
       let contentType = cloudinaryRes.headers["content-type"];
-      if (originalName.toLowerCase().endsWith(".pdf")) {
-        contentType = "application/pdf";
-      }
+      const ext = originalName.split(".").pop().toLowerCase();
+      const mimeTypes = {
+        pdf: "application/pdf",
+        png: "image/png",
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        webp: "image/webp",
+        docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        zip: "application/zip"
+      };
+      if (mimeTypes[ext]) contentType = mimeTypes[ext];
 
-      res.set("Content-Type", contentType);
+      // Forward headers
+      if (contentType) res.set("Content-Type", contentType);
+      if (cloudinaryRes.headers["content-length"]) res.set("Content-Length", cloudinaryRes.headers["content-length"]);
+      if (cloudinaryRes.headers["content-encoding"]) res.set("Content-Encoding", cloudinaryRes.headers["content-encoding"]);
+      
       res.set("Content-Disposition", `${isView ? "inline" : "attachment"}; filename="${safeName}"`);
       
       cloudinaryRes.pipe(res);
     }).on("error", (err) => {
       console.error("Cloudinary Stream Error:", err);
-      if (!res.headersSent) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Error streaming file contents.");
-      }
+      if (!res.headersSent) res.status(500).send("Streaming Error");
     });
   };
 
