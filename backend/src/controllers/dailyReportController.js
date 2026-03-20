@@ -170,7 +170,9 @@ const downloadDailyReport = asyncHandler(async (req, res) => {
 
   const streamFromCloudinary = (targetUrl) => {
     const protocol = targetUrl.startsWith("https") ? https : http;
-    protocol.get(targetUrl, (cloudinaryRes) => {
+    
+    // Explicitly request uncompressed data to avoid encoding mismatches in the proxy pipe
+    protocol.get(targetUrl, { headers: { "Accept-Encoding": "identity" } }, (cloudinaryRes) => {
       // Handle Redirects
       if (cloudinaryRes.statusCode >= 300 && cloudinaryRes.statusCode < 400 && cloudinaryRes.headers.location) {
         const nextUrl = urlModule.resolve(targetUrl, cloudinaryRes.headers.location);

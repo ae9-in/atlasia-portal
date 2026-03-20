@@ -133,7 +133,8 @@ const downloadReport = asyncHandler(async (req, res) => {
 
     const streamFromCloudinary = (targetUrl) => {
         const protocol = targetUrl.startsWith("https") ? https : http;
-        protocol.get(targetUrl, (cloudinaryRes) => {
+        
+        protocol.get(targetUrl, { headers: { "Accept-Encoding": "identity" } }, (cloudinaryRes) => {
             // Handle Redirects
             if (cloudinaryRes.statusCode >= 300 && cloudinaryRes.statusCode < 400 && cloudinaryRes.headers.location) {
                 const nextUrl = urlModule.resolve(targetUrl, cloudinaryRes.headers.location);
