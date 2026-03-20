@@ -272,9 +272,9 @@ const TasksPage = () => {
                 <div key={report._id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <p className="font-semibold text-white">{report.studentId?.name}</p>
                   <p className="mt-2 text-sm text-slate-300">{report.taskId?.title}</p>
-                  <div className="mt-3 flex gap-3 text-xs">
+                  <div className="mt-4 flex gap-2">
                     <a 
-                      className="text-brand-secondary hover:underline transition" 
+                      className="rounded-lg bg-brand-secondary/10 px-3 py-1.5 text-[10px] font-bold text-brand-secondary transition hover:bg-brand-secondary/20 uppercase" 
                       target="_blank" 
                       rel="noreferrer" 
                       href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${report._id}?view=true&token=${localStorage.getItem("atlasia_token")}`}
@@ -282,7 +282,7 @@ const TasksPage = () => {
                       View
                     </a>
                     <a 
-                      className="text-slate-400 hover:text-white transition" 
+                      className="rounded-lg bg-white/5 px-3 py-1.5 text-[10px] font-bold text-slate-300 transition hover:bg-white/10 uppercase" 
                       href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${report._id}?token=${localStorage.getItem("atlasia_token")}`}
                     >
                       Download

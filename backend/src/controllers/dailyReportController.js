@@ -162,18 +162,18 @@ const downloadDailyReport = asyncHandler(async (req, res) => {
   }
 
   let finalUrl = report.cloudinaryUrl;
-  const safeName = report.originalFileName.replace(/[,/]/g, "_"); // Sanitize for URL
+  const originalName = report.originalFileName || report.reportFile || "Daily_Report";
+  const safeName = encodeURIComponent(originalName.replace(/[,/]/g, "_"));
 
   if (isView) {
-    // For PDFs and Images, we want to try inlining them without forcing a filename (to avoid fl_attachment download trigger)
     if (["pdf", "png", "jpg", "jpeg", "webp"].includes(report.fileFormat)) {
-      return res.redirect(301, finalUrl);
+      return res.redirect(302, finalUrl);
     }
   }
 
   // Force download with the original filename for all other cases
   const downloadUrl = finalUrl.replace("/upload/", `/upload/fl_attachment:${safeName}/`);
-  res.redirect(301, downloadUrl);
+  res.redirect(302, downloadUrl);
 });
 
 /**
