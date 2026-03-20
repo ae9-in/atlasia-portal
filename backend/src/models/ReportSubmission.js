@@ -42,6 +42,9 @@ const reportSubmissionSchema = new mongoose.Schema(
     fileSize: { 
       type: Number 
     },
+    resourceType: {
+      type: String
+    },
     submittedAt: {
       type: Date,
       default: Date.now

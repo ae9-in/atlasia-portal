@@ -40,6 +40,7 @@ const uploadDailyReport = asyncHandler(async (req, res) => {
     originalFileName: req.file.originalname,
     fileFormat: format,
     fileSize: req.file.size || 0,
+    resourceType: req.file.resource_type || "raw",
     status: "SUBMITTED"
   });
 
@@ -162,17 +163,23 @@ const downloadDailyReport = asyncHandler(async (req, res) => {
   }
 
   const cloudinaryUrl = report.cloudinaryUrl;
+  const resourceType = report.resourceType || "raw";
 
   if (isView) {
-    // Attempt inline viewing for supported types; default Cloudinary URLs handle this best
-    if (["pdf", "png", "jpg", "jpeg", "webp"].includes(report.fileFormat)) {
+    // Attempt inline viewing for images/videos/PDFs (anything not 'raw' usually has right headers)
+    if (resourceType !== "raw" || ["pdf", "png", "jpg", "jpeg", "webp"].includes(report.fileFormat)) {
       return res.redirect(302, cloudinaryUrl);
     }
   }
 
-  // Force download using the standard attachment flag (without custom filename extension to avoid URL errors)
-  const downloadUrl = cloudinaryUrl.replace("/upload/", "/upload/fl_attachment/");
-  res.redirect(302, downloadUrl);
+  // Only images and videos reliably support the fl_attachment flag in the URL for this setup
+  if (resourceType === "image" || resourceType === "video") {
+    const downloadUrl = cloudinaryUrl.replace("/upload/", "/upload/fl_attachment/");
+    return res.redirect(302, downloadUrl);
+  }
+
+  // For everything else (raw types), standard direct delivery is safest to avoid 401s
+  res.redirect(302, cloudinaryUrl);
 });
 
 /**

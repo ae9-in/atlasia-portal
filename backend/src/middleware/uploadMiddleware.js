@@ -11,8 +11,7 @@ const reportStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "atlasia-reports",
-    // allowed_formats is removed because resource_type: "raw" handles all extensions
-    resource_type: "raw", 
+    resource_type: "auto", 
     public_id: (req, file) => {
       const sanitizedName = file.originalname.replace(/\s+/g, "_");
       return `${Date.now()}_${sanitizedName}`;

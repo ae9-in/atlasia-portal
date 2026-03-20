@@ -28,6 +28,9 @@ const dailyReportSchema = new mongoose.Schema(
     fileSize: {
       type: Number
     },
+    resourceType: {
+      type: String
+    },
     status: {
       type: String,
       enum: ["SUBMITTED", "REVIEWED", "RESUBMIT_REQUESTED"],

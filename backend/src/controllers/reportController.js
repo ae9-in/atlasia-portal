@@ -49,6 +49,7 @@ const uploadReport = asyncHandler(async (req, res) => {
     originalFileName: req.file.originalname,
     fileFormat: path.extname(req.file.originalname).replace(".", "").toLowerCase(),
     fileSize: req.file.size || 0,
+    resourceType: req.file.resource_type || "raw",
     // Maintaining reportFile for legacy compatibility with frontend keys
     reportFile: req.file.filename, 
     status: "SUBMITTED"
@@ -125,15 +126,23 @@ const downloadReport = asyncHandler(async (req, res) => {
   if (submission.cloudinaryUrl) {
     const isView = req.query.view === "true";
     const cloudinaryUrl = submission.cloudinaryUrl;
+    const resourceType = submission.resourceType || "raw";
 
     if (isView) {
-        if (["pdf", "png", "jpg", "jpeg", "webp"].includes(submission.fileFormat)) {
+        // Attempt inline viewing for images/videos/PDFs (anything not 'raw')
+        if (resourceType !== "raw" || ["pdf", "png", "jpg", "jpeg", "webp"].includes(submission.fileFormat)) {
             return res.redirect(302, cloudinaryUrl);
         }
     }
 
-    const downloadUrl = cloudinaryUrl.replace("/upload/", "/upload/fl_attachment/");
-    return res.redirect(302, downloadUrl);
+    // Only images and videos reliably support the fl_attachment flag in the URL for this account's configuration
+    if (resourceType === "image" || resourceType === "video") {
+        const downloadUrl = cloudinaryUrl.replace("/upload/", "/upload/fl_attachment/");
+        return res.redirect(302, downloadUrl);
+    }
+
+    // For everything else (raw types), standard delivery is safest to avoid 401s
+    return res.redirect(302, cloudinaryUrl);
   }
 
   // Legacy fallback for local files (only works if they still exist on disk)
