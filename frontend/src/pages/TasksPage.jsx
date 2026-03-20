@@ -16,6 +16,7 @@ const TasksPage = () => {
   const role = normalizeRole(user?.role);
   const queryClient = useQueryClient();
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [expandedTaskId, setExpandedTaskId] = useState(null);
   const [studentSearch, setStudentSearch] = useState("");
 
   const tasksQuery = useQuery({
@@ -199,94 +200,6 @@ const TasksPage = () => {
         </div>
       ) : null}
 
-      <DataTable
-        columns={[
-          { key: "title", label: "Task Info", render: (row) => (
-            <div className="max-w-[16rem] lg:max-w-xs">
-              <p className="font-semibold text-white">{row.title}</p>
-              <p className="mt-1 line-clamp-2 text-xs text-slate-400" title={row.description}>{row.description}</p>
-              {row.expectedOutcome && (
-                <p className="mt-1 line-clamp-1 text-xs text-brand-secondary" title={row.expectedOutcome}>
-                  <span className="opacity-75">Target:</span> {row.expectedOutcome}
-                </p>
-              )}
-            </div>
-          ) },
-          ...(role !== "STUDENT" ? [{ key: "student", label: "Assigned To", render: (row) => (
-            <div className="flex flex-col">
-              <span className="text-white font-medium">{row.assignedTo?.name || "-"}</span>
-              {row.assignedTo?.college && <span className="text-[10px] text-brand-secondary">{row.assignedTo.college}</span>}
-            </div>
-          ) }] : []),
-          { key: "business", label: "Business", render: (row) => {
-            const name = row.businessId?.name;
-            if (!name) return "-";
-            const colors = ["bg-rose-500", "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"];
-            let hash = 0;
-            for (let i = 0; i < name.length; i++) {
-              hash = name.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const colorClass = colors[Math.abs(hash) % colors.length];
-            return <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold text-white/90 ${colorClass}`}>{name}</span>;
-          } },
-          { key: "sprint", label: "Sprint", render: (row) => row.sprintId?.name || "-" },
-          { key: "deadline", label: "Dates", render: (row) => (
-            <div className="text-xs space-y-1">
-              <div><span className="text-slate-400">Start: </span><span className="text-white">{formatDate(row.startDate)}</span></div>
-              <div><span className="text-slate-400">End: </span><span className="text-white">{formatDate(row.deadlineDate)}</span></div>
-            </div>
-          ) },
-          { key: "status", label: "Status", render: (row) => (
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">{row.status}</span>
-          ) },
-          role === "STUDENT"
-            ? {
-                key: "report",
-                label: "Upload Report",
-                render: (row) => {
-                  const count = row.submissionCount || 0;
-                  const isLimitReached = count >= 3;
-                  return (
-                    <div className="flex flex-col gap-1">
-                      <label className={`${isLimitReached ? 'opacity-30 cursor-not-allowed text-white/50' : 'cursor-pointer text-brand-secondary hover:underline'}`}>
-                        {isLimitReached ? "Limit Reached" : "Upload File"}
-                        {!isLimitReached && (
-                          <input
-                            type="file"
-                            className="hidden"
-                            accept="*"
-                            onChange={(event) => {
-                              const file = event.target.files?.[0];
-                              if (file) {
-                                reportMutation.mutate({ taskId: row._id, file });
-                              }
-                            }}
-                          />
-                        )}
-                      </label>
-                      <span className="text-[10px] text-slate-400">({count}/3 uploaded)</span>
-                    </div>
-                  );
-                }
-              }
-            : {
-                key: "actions",
-                label: "Actions",
-                render: (row) => (
-                  <div className="flex gap-3">
-                    <button type="button" className="text-brand-secondary" onClick={() => setSelectedTaskId(row._id)}>
-                      Reports
-                    </button>
-                    <button type="button" className="text-rose-300" onClick={() => deleteMutation.mutate(row._id)}>
-                      Delete
-                    </button>
-                  </div>
-                )
-              }
-        ]}
-        rows={tasks}
-        emptyText="No tasks available."
-      />
 
       <div className="grid gap-8 xl:grid-cols-2">
         <form
@@ -311,7 +224,16 @@ const TasksPage = () => {
 
             {selectedCommentTask ? (
               <div className="mb-4 space-y-4">
-
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-xs font-bold uppercase tracking-wider text-brand-secondary">Task Details</p>
+                  <p className="mt-2 text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{selectedCommentTask.description}</p>
+                  {selectedCommentTask.expectedOutcome && (
+                    <div className="mt-3 border-t border-white/5 pt-3">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-brand-secondary">Expected Outcome</p>
+                      <p className="mt-1 text-xs text-slate-400 whitespace-pre-wrap">{selectedCommentTask.expectedOutcome}</p>
+                    </div>
+                  )}
+                </div>
 
                 <div className="max-h-[300px] space-y-4 overflow-y-auto rounded-2xl border border-white/10 bg-black/20 p-4">
                   {selectedCommentTask.comments?.length > 0 ? (
@@ -377,6 +299,106 @@ const TasksPage = () => {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="mt-12">
+        <p className="text-sm uppercase tracking-[0.3em] text-brand-secondary mb-4">Task Management</p>
+        <h2 className="text-2xl font-bold text-white mb-6">Tasks Created</h2>
+        <DataTable
+          columns={[
+            { key: "title", label: "Task Info", render: (row) => (
+              <div className="max-w-[20rem] lg:max-w-md py-1">
+                <p className="font-semibold text-white text-base">{row.title}</p>
+                <div className="mt-2 space-y-2">
+                  <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
+                    {row.description}
+                  </p>
+                  {row.expectedOutcome && (
+                    <div className="rounded-lg bg-white/5 p-2 border border-white/5">
+                      <p className="text-[10px] uppercase tracking-wider text-brand-secondary font-bold mb-1">Expected Outcome</p>
+                      <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
+                        {row.expectedOutcome}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) },
+            ...(role !== "STUDENT" ? [{ key: "student", label: "Assigned To", render: (row) => (
+              <div className="flex flex-col">
+                <span className="text-white font-medium">{row.assignedTo?.name || "-"}</span>
+                {row.assignedTo?.college && <span className="text-[10px] text-brand-secondary">{row.assignedTo.college}</span>}
+              </div>
+            ) }] : []),
+            { key: "business", label: "Business", render: (row) => {
+              const name = row.businessId?.name;
+              if (!name) return "-";
+              const colors = ["bg-rose-500", "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"];
+              let hash = 0;
+              for (let i = 0; i < name.length; i++) {
+                hash = name.charCodeAt(i) + ((hash << 5) - hash);
+              }
+              const colorClass = colors[Math.abs(hash) % colors.length];
+              return <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold text-white/90 ${colorClass}`}>{name}</span>;
+            } },
+            { key: "sprint", label: "Sprint", render: (row) => row.sprintId?.name || "-" },
+            { key: "deadline", label: "Dates", render: (row) => (
+              <div className="text-xs space-y-1">
+                <div><span className="text-slate-400">Start: </span><span className="text-white">{formatDate(row.startDate)}</span></div>
+                <div><span className="text-slate-400">End: </span><span className="text-white">{formatDate(row.deadlineDate)}</span></div>
+              </div>
+            ) },
+            { key: "status", label: "Status", render: (row) => (
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">{row.status}</span>
+            ) },
+            role === "STUDENT"
+              ? {
+                  key: "report",
+                  label: "Upload Report",
+                  render: (row) => {
+                    const count = row.submissionCount || 0;
+                    const isLimitReached = count >= 3;
+                    return (
+                      <div className="flex flex-col gap-1">
+                        <label className={`${isLimitReached ? 'opacity-30 cursor-not-allowed text-white/50' : 'cursor-pointer text-brand-secondary hover:underline'}`}>
+                          {isLimitReached ? "Limit Reached" : "Upload File"}
+                          {!isLimitReached && (
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept="*"
+                              onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                if (file) {
+                                  reportMutation.mutate({ taskId: row._id, file });
+                                }
+                              }}
+                            />
+                          )}
+                        </label>
+                        <span className="text-[10px] text-slate-400">({count}/3 uploaded)</span>
+                      </div>
+                    );
+                  }
+                }
+              : {
+                  key: "actions",
+                  label: "Actions",
+                  render: (row) => (
+                    <div className="flex gap-3">
+                      <button type="button" className="text-brand-secondary" onClick={() => setSelectedTaskId(row._id)}>
+                        Reports
+                      </button>
+                      <button type="button" className="text-rose-300" onClick={() => deleteMutation.mutate(row._id)}>
+                        Delete
+                      </button>
+                    </div>
+                  )
+                }
+          ]}
+          rows={tasks}
+          emptyText="No tasks available."
+        />
       </div>
     </div>
   );

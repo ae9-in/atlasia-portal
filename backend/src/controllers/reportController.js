@@ -123,7 +123,16 @@ const downloadReport = asyncHandler(async (req, res) => {
 
   // Redirect to Cloudinary URL — NO local disk needed
   if (submission.cloudinaryUrl) {
-    return res.redirect(301, submission.cloudinaryUrl);
+    const isView = req.query.view === "true";
+    const cloudinaryUrl = submission.cloudinaryUrl;
+
+    if (isView) {
+      // Replace /upload/ with /upload/fl_inline/ to force browser to display inline
+      const inlineUrl = cloudinaryUrl.replace("/upload/", "/upload/fl_inline/");
+      return res.redirect(301, inlineUrl);
+    }
+
+    return res.redirect(301, cloudinaryUrl);
   }
 
   // Legacy fallback for local files (only works if they still exist on disk)

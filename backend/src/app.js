@@ -18,6 +18,7 @@ const { errorHandler, notFound } = require("./middleware/errorMiddleware");
 const { uploadsRoot } = require("./utils/paths");
 
 const app = express();
+app.set('trust proxy', 1);
 
 app.use(
   cors({
