@@ -18,6 +18,7 @@ const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const LogsPage = lazy(() => import("./pages/LogsPage"));
 const SubmissionsPage = lazy(() => import("./pages/SubmissionsPage"));
+const DailyReportsPage = lazy(() => import("./pages/DailyReportsPage"));
 
 const suspense = (element) => <Suspense fallback={<LoadingScreen />}>{element}</Suspense>;
 
@@ -42,6 +43,7 @@ const router = createBrowserRouter([
       { index: true, element: suspense(<DashboardPage />) },
       { path: "tasks", element: suspense(<TasksPage />) },
       { path: "submissions", element: suspense(<SubmissionsPage />) },
+      { path: "daily-reports", element: suspense(<DailyReportsPage />) },
       { path: "businesses", element: suspense(<BusinessesPage />) },
       { path: "sprints", element: suspense(<SprintsPage />) },
       { path: "users", element: suspense(<UsersPage />) },

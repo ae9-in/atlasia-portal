@@ -126,13 +126,16 @@ const downloadReport = asyncHandler(async (req, res) => {
     const isView = req.query.view === "true";
     const cloudinaryUrl = submission.cloudinaryUrl;
 
+    const safeName = submission.originalFileName.replace(/[,/]/g, "_");
+
     if (isView) {
-      // Replace /upload/ with /upload/fl_inline/ to force browser to display inline
-      const inlineUrl = cloudinaryUrl.replace("/upload/", "/upload/fl_inline/");
-      return res.redirect(301, inlineUrl);
+        if (["pdf", "png", "jpg", "jpeg", "webp"].includes(submission.fileFormat)) {
+            return res.redirect(301, cloudinaryUrl);
+        }
     }
 
-    return res.redirect(301, cloudinaryUrl);
+    const downloadUrl = cloudinaryUrl.replace("/upload/", `/upload/fl_attachment:${safeName}/`);
+    return res.redirect(301, downloadUrl);
   }
 
   // Legacy fallback for local files (only works if they still exist on disk)

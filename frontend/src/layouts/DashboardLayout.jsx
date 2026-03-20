@@ -15,6 +15,7 @@ const navigationByRole = {
     { label: "Dashboard", to: "/workspace" },
     { label: "Tasks", to: "/workspace/tasks" },
     { label: "Submissions", to: "/workspace/submissions" },
+    { label: "Daily Reports", to: "/workspace/daily-reports" },
     { label: "Businesses", to: "/workspace/businesses" },
     { label: "Sprints", to: "/workspace/sprints" },
     { label: "Students", to: "/workspace/users" },
@@ -27,6 +28,7 @@ const navigationByRole = {
     { label: "Sprints", to: "/workspace/sprints" },
     { label: "Tasks", to: "/workspace/tasks" },
     { label: "Submissions", to: "/workspace/submissions" },
+    { label: "Daily Reports", to: "/workspace/daily-reports" },
     { label: "Logs", to: "/workspace/logs" },
     { label: "Settings", to: "/workspace/settings" },
     { label: "Profile", to: "/workspace/profile" }

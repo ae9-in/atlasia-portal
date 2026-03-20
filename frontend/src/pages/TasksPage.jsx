@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
+import DailyReportCard from "../components/DailyReportCard";
 import DataTable from "../components/DataTable";
 import LoadingScreen from "../components/LoadingScreen";
+import TaskBoard from "../components/TaskBoard";
 import UploadDropzone from "../components/UploadDropzone";
 import { atlasiaService } from "../services/atlasiaService";
 import { useAuth } from "../store/AuthContext";
@@ -292,12 +294,7 @@ const TasksPage = () => {
             </div>
           </div>
         ) : (
-          <div className="glass-panel p-6">
-            <h2 className="text-2xl font-bold text-white">Upload guidance</h2>
-            <div className="mt-6">
-              <UploadDropzone onFileSelect={() => {}} disabled />
-            </div>
-          </div>
+          <DailyReportCard />
         )}
       </div>
 

@@ -14,6 +14,7 @@ const reportRoutes = require("./routes/reportRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const businessRoutes = require("./routes/businessRoutes");
 const sprintRoutes = require("./routes/sprintRoutes");
+const dailyReportRoutes = require("./routes/dailyReportRoutes");
 const { errorHandler, notFound } = require("./middleware/errorMiddleware");
 const { uploadsRoot } = require("./utils/paths");
 
@@ -65,6 +66,7 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/business", businessRoutes);
 app.use("/api/sprint", sprintRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/daily-reports", dailyReportRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
