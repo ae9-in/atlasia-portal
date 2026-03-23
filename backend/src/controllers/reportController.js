@@ -168,10 +168,6 @@ const downloadReport = asyncHandler(async (req, res) => {
         return res.redirect(302, cloudinaryUrl);
     }
 
-    if (!cloudinaryUrl.includes("/raw/upload/") && !cloudinaryUrl.includes("fl_attachment")) {
-        cloudinaryUrl = cloudinaryUrl.replace("/upload/", "/upload/fl_attachment/");
-    }
-
     return res.redirect(302, cloudinaryUrl);
   }
 

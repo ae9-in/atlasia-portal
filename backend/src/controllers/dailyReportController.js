@@ -209,10 +209,8 @@ const downloadDailyReport = asyncHandler(async (req, res) => {
     return res.redirect(302, cloudinaryUrl);
   }
 
-  if (!cloudinaryUrl.includes("/raw/upload/") && !cloudinaryUrl.includes("fl_attachment")) {
-    cloudinaryUrl = cloudinaryUrl.replace("/upload/", "/upload/fl_attachment/");
-  }
-
+  // Cloudinary explicitly blocks fl_attachment on PDFs uploaded as 'image'. 
+  // We simply redirect to the raw URL to allow inline viewing/saving.
   res.redirect(302, cloudinaryUrl);
 });
 
