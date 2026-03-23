@@ -88,6 +88,7 @@ const getTaskReports = asyncHandler(async (req, res) => {
 
 const downloadReport = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const isView = req.query.view === "true";
   
   const isId = mongoose.Types.ObjectId.isValid(id);
   const submission = await ReportSubmission.findOne({
