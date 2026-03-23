@@ -29,8 +29,9 @@ app.use(
 );
 app.use(
   helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" }, // Updated Helmet policy
-    crossOriginEmbedderPolicy: { policy: "credentialless" }, // Updated Helmet policy
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: { policy: "credentialless" },
+    crossOriginOpenerPolicy: false, // Fixes target="_blank" blocked:origin errors
     contentSecurityPolicy: false,
     originAgentCluster: false
   })

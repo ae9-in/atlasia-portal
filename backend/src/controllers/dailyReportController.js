@@ -163,16 +163,53 @@ const downloadDailyReport = asyncHandler(async (req, res) => {
   }
 
   let cloudinaryUrl = report.cloudinaryUrl;
-  const isPdf = report.fileFormat === "pdf" || (report.originalFileName && report.originalFileName.toLowerCase().endsWith(".pdf"));
+  const isPdf = report.fileFormat === "pdf" || (report.originalFileName && report.originalFileName.toLowerCase().endsWith(".pdf")) || report.cloudinaryUrl.toLowerCase().includes(".pdf");
 
+  if (report.cloudinaryPublicId) {
+    let actualResourceType = "image";
+    if (cloudinaryUrl && cloudinaryUrl.includes("/raw/upload/")) actualResourceType = "raw";
+    if (cloudinaryUrl && cloudinaryUrl.includes("/video/upload/")) actualResourceType = "video";
+
+    let ext = "pdf";
+    if (cloudinaryUrl) {
+      const urlWithoutQuery = cloudinaryUrl.split("?")[0];
+      const extMatch = urlWithoutQuery.match(/\.([a-z0-9]+)$/i);
+      if (extMatch) ext = extMatch[1];
+    }
+
+    if (isView && isPdf && actualResourceType === "image") {
+      // Bypasses PDF restriction by rendering the first page as a JPG via the public CDN
+      const viewOptions = { secure: true, sign_url: true, resource_type: actualResourceType, format: "jpg" };
+      const viewUrl = cloudinary.url(report.cloudinaryPublicId, viewOptions);
+      return res.redirect(302, viewUrl);
+    } else {
+      // Bypasses the Cloudinary Free Tier CDN WAF restrictions on PDF delivery by fetching
+      // directly through the authenticated REST Admin API.
+      const downloadUrl = cloudinary.utils.private_download_url(
+        report.cloudinaryPublicId, 
+        ext, 
+        { 
+          resource_type: actualResourceType, 
+          type: "upload", 
+          attachment: true 
+        }
+      );
+      return res.redirect(302, downloadUrl);
+    }
+  }
+
+  // Fallback for legacy files without public_id
   if (isView) {
-    if (isPdf && cloudinaryUrl.includes("/raw/upload/")) {
-      cloudinaryUrl = cloudinaryUrl.replace("/raw/upload/", "/image/upload/");
+    if (isPdf) {
+      if (cloudinaryUrl.includes("/raw/upload/")) {
+        cloudinaryUrl = cloudinaryUrl.replace("/raw/upload/", "/image/upload/");
+      }
+      cloudinaryUrl = cloudinaryUrl.replace(/\.pdf(\.pdf)?(?:[\s?#].*)?$/i, ".jpg");
     }
     return res.redirect(302, cloudinaryUrl);
   }
 
-  if (!cloudinaryUrl.includes("/raw/upload/")) {
+  if (!cloudinaryUrl.includes("/raw/upload/") && !cloudinaryUrl.includes("fl_attachment")) {
     cloudinaryUrl = cloudinaryUrl.replace("/upload/", "/upload/fl_attachment/");
   }
 

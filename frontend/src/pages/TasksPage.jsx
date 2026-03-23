@@ -277,13 +277,13 @@ const TasksPage = () => {
                       className="rounded-lg bg-brand-secondary/10 px-3 py-1.5 text-[10px] font-bold text-brand-secondary transition hover:bg-brand-secondary/20 uppercase" 
                       target="_blank" 
                       rel="noreferrer" 
-                      href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${report._id}?view=true&token=${localStorage.getItem("atlasia_token")}`}
+                      href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${report._id}?view=true&token=${localStorage.getItem("atlasia_token")}&t=${Date.now()}`}
                     >
                       View
                     </a>
                     <a 
                       className="rounded-lg bg-white/5 px-3 py-1.5 text-[10px] font-bold text-slate-300 transition hover:bg-white/10 uppercase" 
-                      href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${report._id}?token=${localStorage.getItem("atlasia_token")}`}
+                      href={`${import.meta.env.VITE_API_URL || ""}/api/reports/download/${report._id}?token=${localStorage.getItem("atlasia_token")}&t=${Date.now()}`}
                     >
                       Download
                     </a>

@@ -133,7 +133,7 @@ const DailyReportsPage = () => {
                 render: (row) => (
                     <div className="flex items-center gap-3">
                         <a 
-                           href={`${import.meta.env.VITE_API_URL || ""}/api/daily-reports/${row._id}/download?view=true&token=${localStorage.getItem("atlasia_token")}`}
+                           href={`${import.meta.env.VITE_API_URL || ""}/api/daily-reports/${row._id}/download?view=true&token=${localStorage.getItem("atlasia_token")}&t=${Date.now()}`}
                            target="_blank"
                            rel="noreferrer"
                            className="flex items-center gap-1 rounded-xl bg-brand-secondary/10 px-4 py-2 text-xs font-bold text-brand-secondary transition hover:bg-brand-secondary/20"

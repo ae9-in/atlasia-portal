@@ -126,21 +126,53 @@ const downloadReport = asyncHandler(async (req, res) => {
   // Redirect to Cloudinary URL — NO local disk needed
   if (submission.cloudinaryUrl) {
     let cloudinaryUrl = submission.cloudinaryUrl;
-    const isPdf = submission.fileFormat === "pdf" || (submission.originalFileName && submission.originalFileName.toLowerCase().endsWith(".pdf"));
+    const isPdf = submission.fileFormat === "pdf" || (submission.originalFileName && submission.originalFileName.toLowerCase().endsWith(".pdf")) || cloudinaryUrl.toLowerCase().includes(".pdf");
+
+    if (submission.cloudinaryPublicId) {
+      let actualResourceType = "image";
+      if (cloudinaryUrl && cloudinaryUrl.includes("/raw/upload/")) actualResourceType = "raw";
+      if (cloudinaryUrl && cloudinaryUrl.includes("/video/upload/")) actualResourceType = "video";
+
+      let ext = "pdf";
+      if (cloudinaryUrl) {
+        const urlWithoutQuery = cloudinaryUrl.split("?")[0];
+        const extMatch = urlWithoutQuery.match(/\.([a-z0-9]+)$/i);
+        if (extMatch) ext = extMatch[1];
+      }
+
+      if (isView && isPdf && actualResourceType === "image") {
+        const viewOptions = { secure: true, sign_url: true, resource_type: actualResourceType, format: "jpg" };
+        const viewUrl = cloudinary.url(submission.cloudinaryPublicId, viewOptions);
+        return res.redirect(302, viewUrl);
+      } else {
+        const downloadUrl = cloudinary.utils.private_download_url(
+          submission.cloudinaryPublicId, 
+          ext, 
+          { 
+            resource_type: actualResourceType, 
+            type: "upload", 
+            attachment: true 
+          }
+        );
+        return res.redirect(302, downloadUrl);
+      }
+    }
 
     if (isView) {
-        if (isPdf && cloudinaryUrl.includes("/raw/upload/")) {
-            cloudinaryUrl = cloudinaryUrl.replace("/raw/upload/", "/image/upload/");
+        if (isPdf) {
+            if (cloudinaryUrl.includes("/raw/upload/")) {
+                cloudinaryUrl = cloudinaryUrl.replace("/raw/upload/", "/image/upload/");
+            }
+            cloudinaryUrl = cloudinaryUrl.replace(/\.pdf(\.pdf)?(?:[\s?#].*)?$/i, ".jpg");
         }
         return res.redirect(302, cloudinaryUrl);
     }
 
-    if (!cloudinaryUrl.includes("/raw/upload/")) {
+    if (!cloudinaryUrl.includes("/raw/upload/") && !cloudinaryUrl.includes("fl_attachment")) {
         cloudinaryUrl = cloudinaryUrl.replace("/upload/", "/upload/fl_attachment/");
     }
 
     return res.redirect(302, cloudinaryUrl);
-    return;
   }
 
   // Legacy fallback for local files (only works if they still exist on disk)
